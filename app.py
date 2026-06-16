@@ -1,40 +1,58 @@
-﻿import streamlit as st
+import streamlit as st
 import requests
 import pandas as pd
+import datetime
 
-# 1. 手順2で発行したURLをここに貼り付けてください
+# 設定：URLはご自身のものに書き換えてください
 GAS_URL = "https://script.google.com/macros/s/AKfycbyJtg-SZVpFnUUMxkJ1PkEUqHVOrBAjWhoK7xGQQFgEsniRMLMf6YDI5H2x2ORhZL1rYA/exec"
-
-st.title("Momentum Diary")
-
-# 2. スプレッドシートからデータを取得する（GASを経由してシート全体を読み込む）
-# ※シートを公開設定にする必要があります（後述）
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6UXrWkViMBqVFvkayaXQ76oKeh47-hDe9rbqOEFMAlppFcu-KDrz-MMsPUKFIGcHmjrkT8MmrT7SX/pub?output=csv"
-csv_export_url = SHEET_URL.replace("/edit#gid=", "/export?format=csv&gid=")
 
-@st.cache_data(ttl=5) # 5秒ごとに最新に更新
+st.set_page_config(page_title="Momentum Diary", layout="centered")
+
+# --- データ読み込み ---
+@st.cache_data(ttl=1)
 def get_data():
-    return pd.read_csv(csv_export_url)
+    return pd.read_csv(SHEET_URL)
 
 df = get_data()
 
-# 3. 日付選択とデータの表示
-selected_date = st.date_input("日付を選択")
-date_str = selected_date.strftime("%Y-%m-%d")
+# --- 自動保存関数 ---
+def auto_save():
+    date_str = st.session_state.selected_date.strftime("%Y-%m-%d")
+    header_str = f"{st.session_state.selected_date.year}年{st.session_state.selected_date.month}月{st.session_state.selected_date.day}日"
+    content = st.session_state.diary_text
+    
+    payload = {"date": date_str, "header": header_str, "content": content}
+    requests.post(GAS_URL, json=payload)
+    # 必要に応じてここで st.toast("自動保存しました") を使って通知も出せます
 
-# 該当するデータを探す
+# --- 状態管理 ---
+if 'selected_date' not in st.session_state:
+    st.session_state.selected_date = datetime.date.today()
+
+# --- サイドバー ---
+st.sidebar.title("Momentum Diary")
+if st.sidebar.button("Today"):
+    st.session_state.selected_date = datetime.date.today()
+    st.rerun()
+
+new_date = st.sidebar.date_input("日付を選択", value=st.session_state.selected_date)
+if new_date != st.session_state.selected_date:
+    st.session_state.selected_date = new_date
+    st.rerun()
+
+# --- メインエリア ---
+date_str = st.session_state.selected_date.strftime("%Y-%m-%d")
 entry = df[df['date'] == date_str]
-initial_text = entry['content'].values[0] if not entry.empty else ""
+current_content = entry['content'].values[0] if not entry.empty else ""
 
-# 4. 入力エリア
-content = st.text_area("日記の内容", value=initial_text, height=300)
+# テキストエリアの内容が変わるたびに auto_save を実行
+st.text_area(
+    "日記本文", 
+    value=current_content, 
+    height=400, 
+    key="diary_text", 
+    on_change=auto_save
+)
 
-# 5. 保存ボタン
-if st.button("保存"):
-    payload = {"date": date_str, "header": date_str, "content": content}
-    response = requests.post(GAS_URL, json=payload)
-    if response.status_code == 200:
-        st.success("保存しました！")
-        st.rerun() # リロードして最新状態にする
-    else:
-        st.error("保存に失敗しました")
+st.caption("入力が終わると自動で保存されます")
