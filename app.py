@@ -4,8 +4,8 @@ import pandas as pd
 import datetime
 
 # --- 設定 ---
-GAS_URL = "あなたのGASウェブアプリURL"
-SHEET_URL = "あなたのスプレッドシートのCSV公開URL"
+GAS_URL = "https://script.google.com/macros/s/AKfycbyJtg-SZVpFnUUMxkJ1PkEUqHVOrBAjWhoK7xGQQFgEsniRMLMf6YDI5H2x2ORhZL1rYA/exec"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6UXrWkViMBqVFvkayaXQ76oKeh47-hDe9rbqOEFMAlppFcu-KDrz-MMsPUKFIGcHmjrkT8MmrT7SX/pub?output=csv"
 
 st.set_page_config(layout="wide") # 画面を広く使う
 
