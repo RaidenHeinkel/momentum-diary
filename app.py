@@ -11,11 +11,17 @@ st.set_page_config(layout="wide") # 画面を広く使う
 
 # --- データ取得 ---
 # キャッシュをクリアして毎回最新を取得
+# --- データ取得部分の修正 ---
 @st.cache_data(ttl=1)
 def get_data():
+    # URLが正しい形式か確認し、CSV出力用に強制変換
+    url = SHEET_URL.replace("/edit#gid=", "/export?format=csv&gid=")
     try:
-        return pd.read_csv(SHEET_URL)
-    except:
+        # ヘッダーを明示的に指定して読み込み
+        df = pd.read_csv(url)
+        return df
+    except Exception as e:
+        st.error(f"データ読み込みエラー: {e}")
         return pd.DataFrame(columns=['date', 'header', 'content'])
 
 df = get_data()
