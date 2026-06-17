@@ -12,8 +12,6 @@ st.set_page_config(page_title="Momentum Diary", layout="centered")
 # --- データ読み込み ---
 @st.cache_data(ttl=1)
 def get_data():
-    # 【修正ポイント】 .fillna("") を追加し、空欄が「nan」になるのを防ぎます
-    # すでにスプレッドシートに入ってしまった「nan」という文字も自動で空欄にリセットされます
     return pd.read_csv(SHEET_URL).fillna("")
 
 df = get_data()
@@ -39,12 +37,15 @@ header_str = f"{selected_date.year}年{selected_date.month}月{selected_date.day
 
 st.subheader(header_str)
 
-# 該当データ抽出
-entry = df[df['date'] == date_str]
-current_content = entry['content'].values[0] if not entry.empty else ""
+# 【修正ポイント】日付が切り替わったときだけ、スプレッドシートからデータを読み込む
+if 'previous_date' not in st.session_state or st.session_state.previous_date != date_str:
+    st.session_state.previous_date = date_str
+    entry = df[df['date'] == date_str]
+    # 最初に見つかったデータをセッションに一時保存
+    st.session_state.current_diary_content = entry['content'].values[0] if not entry.empty else ""
 
-# 入力エリア
-content = st.text_area("日記本文", value=current_content, height=300)
+# 入力エリア（keyを使ってセッション状態と直接連動させます）
+content = st.text_area("日記本文", key="current_diary_content", height=300)
 
 # 保存処理
 if st.button("保存"):
