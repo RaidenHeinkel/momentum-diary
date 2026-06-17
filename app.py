@@ -78,11 +78,14 @@ div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !importa
 
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
 
-/* 💡 テキストボックスの上辺が削れないようにz-indexで前面に出し、マージンを少し微調整 */
+/* 💡 マイナスマージン（-4pxなど）をやめ、少しだけ下に下ろすことで上の日付との干渉を100%物理的に回避します */
 div[data-testid="stTextArea"] { 
-    margin-top: -2px !important; 
+    margin-top: 4px !important; 
+}
+
+/* 💡 テキストエリアの内側の箱にも強制的に干渉を受けない安全設定を適用 */
+div[data-testid="stTextArea"] > div {
     position: relative !important;
-    z-index: 10 !important;
 }
 
 .stLinkButton > a { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; text-align: center !important; text-decoration: none !important; display: inline-block !important; }
