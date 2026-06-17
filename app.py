@@ -10,47 +10,34 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
 
-# --- iPhone SE2 適合 ＆ 限界突破・上詰めCSS ---
-st.markdown("""
-<style>
-/* 1. 一番外側のアプリコンテナの固定余白を完全にゼロにする */
-.stApp { margin-top: 0px !important; padding-top: 0px !important; }
-[data-testid="stAppViewContainer"] { padding-top: 0px !important; }
-
-/* 2. 隠れた最上部のヘッダー領域を完全に消し去る */
-[data-testid="stHeader"] { display: none !important; height: 0px !important; }
-
-/* 3. コンテンツを包むブロックの padding-top を 0 にし、さらに上に引き上げる */
-.main .block-container { 
-    padding-top: 0px !important; 
-    margin-top: -5.5rem !important; 
-    padding-left: 0.5rem !important; 
-    padding-right: 0.5rem !important; 
-}
-
-/* タイトル自体の余白も完全にゼロ */
-.responsive-title { 
-    font-size: 1.6rem !important; 
-    font-weight: bold; 
-    text-align: center; 
-    margin-top: 0px !important; 
-    padding-top: 0px !important;
-    margin-bottom: 8px !important; 
-}
-
-div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
-div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
-.stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
-.weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
-
-/* 💡 クールなディープブルーの日記ありボタン用の設定（Streamlit標準のセカンダリを上書き） */
-div.has-diary-btn > button {
-    background-color: #2b4c7e !important;
-    color: #ffffff !important;
-    border: 1px solid #1f375c !important;
-}
-</style>
-""", unsafe_allow_html=True)
+# --- 日記データがある日のキー（key）を狙い撃ちして色を変えるためのスタイルを動的に作る関数 ---
+def generate_diary_button_css(year, month, existing_dates):
+    css_rules = []
+    # 今月のすべての日にちをループ
+    for day in range(1, 32):
+        date_str = f"{year}-{month:02d}-{day:02d}"
+        
+        # 日記データが存在するか、ローカルに更新がある場合
+        has_diary = date_str in existing_dates or (
+            date_str in st.session_state.local_updates and st.session_state.local_updates[date_str].strip() != ""
+        )
+        
+        if has_diary:
+            # 💡 Streamlitのボタンが生成するユニークなキー名を元に、CSSセレクタを生成
+            # data-testid="stBaseButton-secondary" のうち、対応するkeyのボタンだけ背景色を上書き
+            # クールな雰囲気の高級感あるディープブルー（#2a4773）を採用
+            button_key = f"btn_{year}_{month}_{day}"
+            rule = f"""
+            div[data-testid="stColumn"] button[key="{button_key}"][data-testid="stBaseButton-secondary"],
+            div[data-testid="column"] button[key="{button_key}"][data-testid="stBaseButton-secondary"] {{
+                background-color: #2a4773 !important;
+                color: #ffffff !important;
+                border: 1px solid #1c3254 !important;
+            }}
+            """
+            css_rules.append(rule)
+            
+    return "\n".join(css_rules)
 
 # --- データ読み込み関数 ---
 @st.cache_data(ttl=0)
@@ -69,10 +56,50 @@ if 'previous_date' not in st.session_state:
 if 'local_updates' not in st.session_state:
     st.session_state.local_updates = {}
 
-# --- 最初に入出力を同期するためのデータ先読み ---
+# --- データの先読みと日記あり日付の抽出 ---
 df_all = get_data(SHEET_URL)
-# 日記が書き込まれている日付のリストを取得（フォーマット: YYYY-MM-DD）
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
+
+# 動的なボタン色付けCSSの生成
+diary_btn_css = generate_diary_button_css(st.session_state.view_year, st.session_state.view_month, existing_dates)
+
+# --- iPhone SE2 適合 ＆ 限界突破・上詰めCSS ---
+st.markdown(f"""
+<style>
+/* 1. 一番外側のアプリコンテナの固定余白を完全にゼロにする */
+.stApp {{ margin-top: 0px !important; padding-top: 0px !important; }}
+[data-testid="stAppViewContainer"] {{ padding-top: 0px !important; }}
+
+/* 2. 隠れた最上部のヘッダー領域を完全に消し去る */
+[data-testid="stHeader"] {{ display: none !important; height: 0px !important; }}
+
+/* 3. コンテンツを包むブロックの padding-top を 0 にし、さらに上に引き上げる */
+.main .block-container {{ 
+    padding-top: 0px !important; 
+    margin-top: -5.5rem !important; 
+    padding-left: 0.5rem !important; 
+    padding-right: 0.5rem !important; 
+}}
+
+/* タイトル自体の余白も完全にゼロ */
+.responsive-title {{ 
+    font-size: 1.6rem !important; 
+    font-weight: bold; 
+    text-align: center; 
+    margin-top: 0px !important; 
+    padding-top: 0px !important;
+    margin-bottom: 8px !important; 
+}}
+
+div[data-testid="stHorizontalBlock"] {{ display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }}
+div[data-testid="stColumn"], div[data-testid="column"] {{ width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }}
+.stButton > button {{ width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }}
+.weekday-header {{ text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }}
+
+/* 💡 動的に生成された日記データありボタンのカスタム色を適用 */
+{diary_btn_css}
+</style>
+""", unsafe_allow_html=True)
 
 # --- メインエリア UI ---
 st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_html=True)
@@ -132,33 +159,17 @@ for week in cal:
         if day == 0:
             cols_days[i].write("")
         else:
-            current_loop_date_str = f"{st.session_state.view_year}-{st.session_state.view_month:02d}-{day:02d}"
-            
             is_selected = (
                 st.session_state.selected_date.year == st.session_state.view_year and
                 st.session_state.selected_date.month == st.session_state.view_month and
                 st.session_state.selected_date.day == day
             )
-            
-            # 日記データがあるか判定（ローカルの最新保存状態も加味）
-            has_diary = current_loop_date_str in existing_dates or (
-                current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
-            )
-            
             btn_type = "primary" if is_selected else "secondary"
             
-            # 💡 日記データがある日付ボタンは専用のCSSクラス（div）で包んで色を変える
-            if has_diary and not is_selected:
-                with cols_days[i].container(key=f"container_{current_loop_date_str}"):
-                    st.markdown('<div class="has-diary-btn">', unsafe_allow_html=True)
-                    if st.button(str(day), key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
-                        st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
-                        st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                if cols_days[i].button(str(day), key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
-                    st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
-                    st.rerun()
+            # 💡 レイアウト崩れを防ぐため、元の完璧な配置コードを完全に復元
+            if cols_days[i].button(str(day), key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
+                st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
+                st.rerun()
 
 st.markdown("---")
 
