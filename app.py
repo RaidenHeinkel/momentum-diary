@@ -10,21 +10,25 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
 
-# --- iPhone SE2 適合 ＆ 限界上詰めCSS ---
+# --- iPhone SE2 適合 ＆ 限界突破・上詰めCSS ---
 st.markdown("""
 <style>
-/* 💡 隠れた最上部のヘッダー領域を完全に消し去る */
+/* 💡 1. 一番外側のアプリコンテナの固定余白を完全にゼロにする */
+.stApp { margin-top: 0px !important; padding-top: 0px !important; }
+[data-testid="stAppViewContainer"] { padding-top: 0px !important; }
+
+/* 💡 2. 隠れた最上部のヘッダー領域を完全に消し去る */
 [data-testid="stHeader"] { display: none !important; height: 0px !important; }
 
-/* 💡 アプリ全体のトップ余白を完全にゼロにし、上方向に無理やり引き上げる */
+/* 💡 3. メインエリアをさらに上方向に強制移動 */
 .main .block-container { 
     padding-top: 0rem !important; 
-    margin-top: -3.5rem !important; /* マイナスマージンで上の余白を強制的に潰す */
+    margin-top: -5.0rem !important; /* さらにマイナスを強めて限界まで上に張り付かせます */
     padding-left: 0.5rem !important; 
     padding-right: 0.5rem !important; 
 }
 
-/* タイトル自体の余白も限界までリセット */
+/* タイトル自体の余白も完全にゼロ */
 .responsive-title { 
     font-size: 1.6rem !important; 
     font-weight: bold; 
