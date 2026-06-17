@@ -54,7 +54,7 @@ div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; fl
 .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
 .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
 
-/* 💡 テキストエリアの空ラベルが持つ不要な縦余白を完全にゼロにする */
+/* テキストエリアの空ラベルが持つ不要な縦余白を完全にゼロにする */
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
 div[data-testid="stTextArea"] { margin-top: -4px !important; }
 </style>
@@ -130,14 +130,12 @@ for week in cal:
                 current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
             )
             
-            # 日記がある未選択の日は「🔹」マーク
-            button_label = f"🔹{day}" if (has_diary and not is_selected) else str(day)
+            # 💡 選択されて（赤くなって）いる時でも、日記があれば「🔹」を常につけるように変更
+            button_label = f"🔹{day}" if has_diary else str(day)
             
             if cols_days[i].button(button_label, key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
                 st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
                 st.rerun()
-
-# 💡 １．カレンダーと日記エリアの間の境界ライン（st.markdown("---")）を削除しました
 
 # 4. 日記入力セクション
 selected_date = st.session_state.selected_date
@@ -145,7 +143,7 @@ date_str = selected_date.strftime("%Y-%m-%d")
 weekdays = ["月", "火", "水", "木", "金", "土", "日"]
 header_str = f"{selected_date.year}年{selected_date.month}月{selected_date.day}日（{weekdays[selected_date.weekday()]}）"
 
-# 💡 ２．日付表示を小さくスマートに（少し小ぶりのフォントサイズに変更）
+# 日付表示を小さくスマートに（少し小ぶりのフォントサイズに変更）
 st.markdown(f"<p style='font-size: 0.95rem; font-weight: bold; margin: 8px 0 4px 0;'>{header_str}</p>", unsafe_allow_html=True)
 
 content_key = f"diary_content_{date_str}"
@@ -162,7 +160,7 @@ if st.session_state.previous_date != date_str or content_key not in st.session_s
     
     st.session_state.previous_date = date_str
 
-# 💡 ３．「日記本文」の文字を消去（第一引数を空文字 "" に変更）
+# 「日記本文」の文字を消去（第一引数を空文字 "" に変更）
 content = st.text_area("", key=content_key, height=180)
 
 # ボタンエリア
