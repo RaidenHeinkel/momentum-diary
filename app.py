@@ -9,10 +9,21 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6UXrWkViMBqVFvkay
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
 
-# --- データ読み込み ---
-@st.cache_data(ttl=1)
+# データ取得（JSON経由）
+@st.cache_data(ttl=10)
 def get_data():
-    return pd.read_csv(SHEET_URL)
+    try:
+        response = requests.get(GAS_URL)
+        data = response.json()
+        
+        # --- 【追加】アプリ側で日付順（降順：新しい順）に並び替える ---
+        if data and isinstance(data, list):
+            # date文字列で並び替え
+            data.sort(key=lambda x: x['date'], reverse=True)
+            
+        return data
+    except:
+        return []
 
 df = get_data()
 
