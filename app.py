@@ -5,10 +5,8 @@ import datetime
 import calendar
 
 # 設定：GASのURLとスプレッドシートのリアルタイムCSV URL
-GAS_URL = "https://script.google.com/macros/s/AKfycbxYmWBaI-4nYVZz-hcyrRBvOpOfztD3Qp9_dXTxIYey-46HVBscHq-t5RG2ITMjMPZX3Q/exec"
+GAS_URL = "https://script.google.com/macros/s/AKfycbyvIOYuOBYkliCbiUBfQgegIyFq3xO1wiFvB7tD_JP8mkwrRxiOW0AS9FC6XOBzCNa3Pw/exec"
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/gviz/tq?tqx=out:csv"
-
-# 💡 CSVのURLから、ブラウザで直接開くための通常のスプレッドシートURLを生成
 SPREADSHEET_VIEW_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/edit"
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
@@ -37,13 +35,11 @@ existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist(
 # --- 上部余白を完全復活させる安全なCSS ---
 st.markdown("""
 <style>
-/* 上詰め用のマイナスマージンをすべて撤廃し、標準 of 余白を復活（右上のグルグルを完全に露出させます） */
 .main .block-container { 
     padding-left: 0.5rem !important; 
     padding-right: 0.5rem !important; 
 }
 
-/* タイトル余白の調整 */
 .responsive-title { 
     font-size: 1.6rem !important; 
     font-weight: bold; 
@@ -51,21 +47,17 @@ st.markdown("""
     margin-bottom: 8px !important; 
 }
 
-/* カレンダーのグリッドとボタンの横幅均等化設定は完璧に維持 */
 div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
 div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
 .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
 .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
 
-/* プルダウンメニュー自体の縦余白やラベルを非表示にしてカレンダーと高さを合わせる */
 div[data-testid="stSelectbox"] label { display: none !important; }
 div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !important; }
 
-/* テキストエリアの空ラベルが持つ不要な縦余白を完全にゼロにする */
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
 div[data-testid="stTextArea"] { margin-top: -4px !important; }
 
-/* 💡 st.link_button(一覧ボタン)の見た目を通常のst.button(同期など)のサイズ感に完璧に同調させるCSS */
 .stLinkButton > a { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; text-align: center !important; text-decoration: none !important; display: inline-block !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -80,7 +72,6 @@ if col_prev_year.button("⏪ 前年", use_container_width=True):
     st.session_state.view_year -= 1
     st.rerun()
 
-# 前後10年を選択肢として生成し、プルダウンを設置
 year_options = list(range(st.session_state.view_year - 10, st.session_state.view_year + 11))
 selected_year = col_year_select.selectbox(
     "年選択",
@@ -88,7 +79,6 @@ selected_year = col_year_select.selectbox(
     index=year_options.index(st.session_state.view_year),
     label_visibility="collapsed"
 )
-# プルダウンが手動で切り替えられたら状態を更新
 if selected_year != st.session_state.view_year:
     st.session_state.view_year = selected_year
     st.rerun()
@@ -124,7 +114,6 @@ if col_next_month.button("翌月 ▶", use_container_width=True):
         st.session_state.view_month += 1
     st.rerun()
 
-# 現在の表示年月
 st.markdown(f"<h4 style='text-align: center; margin: 8px 0; font-size: 1rem;'>{st.session_state.view_year}年 {st.session_state.view_month}月</h4>", unsafe_allow_html=True)
 
 # 2. 曜日ヘッダー
@@ -150,12 +139,10 @@ for week in cal:
             )
             btn_type = "primary" if is_selected else "secondary"
             
-            # 日記データがあるか判定
             has_diary = current_loop_date_str in existing_dates or (
                 current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
             )
             
-            # 選択されて（赤くなって）いる時でも、日記があれば「🔹」を常につける
             button_label = f"🔹{day}" if has_diary else str(day)
             
             if cols_days[i].button(button_label, key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
@@ -168,7 +155,6 @@ date_str = selected_date.strftime("%Y-%m-%d")
 weekdays = ["月", "火", "水", "木", "金", "土", "日"]
 header_str = f"{selected_date.year}年{selected_date.month}月{selected_date.day}日（{weekdays[selected_date.weekday()]}）"
 
-# 日付表示を小さくスマートに（少し小ぶりのフォントサイズに変更）
 st.markdown(f"<p style='font-size: 0.95rem; font-weight: bold; margin: 8px 0 4px 0;'>{header_str}</p>", unsafe_allow_html=True)
 
 content_key = f"diary_content_{date_str}"
@@ -185,10 +171,9 @@ if st.session_state.previous_date != date_str or content_key not in st.session_s
     
     st.session_state.previous_date = date_str
 
-# 「日記本文」の文字を消去（第一引数を空文字 "" に変更）
 content = st.text_area("", key=content_key, height=180)
 
-# 💡 ボタンエリア（保存:3, 同期:1, 一覧:1 のスマートな幅比率で分配）
+# ボタンエリア
 col_save, col_sync, col_list = st.columns([3, 1, 1])
 
 if col_save.button("保存", type="primary", use_container_width=True):
@@ -208,5 +193,4 @@ if col_sync.button("🔄 同期", use_container_width=True):
         del st.session_state.local_updates[date_str]
     st.rerun()
 
-# 💡 別タブで直接Googleスプレッドシートを開く「一覧」リンクボタンを配置
 col_list.link_button("📊 一覧", url=SPREADSHEET_VIEW_URL, use_container_width=True)
