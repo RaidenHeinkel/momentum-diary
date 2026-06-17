@@ -4,10 +4,8 @@ import pandas as pd
 import datetime
 import calendar
 
-# 設定：GASのURLとスプレッドシートのURL
+# 設定：GASのURLとスプレッドシートのリアルタイムCSV URL
 GAS_URL = "https://script.google.com/macros/s/AKfycbzuP38pZNYdVFX_i3_678YwOhm6MHffqB8vayoEqHvmiKHF8yVX3vEOkHInLqBSANsi/exec"
-
-# 💡【重要】ここを下記の「リアルタイムURL」に書き換えると、完全に遅延がゼロになります！
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/gviz/tq?tqx=out:csv"
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
@@ -25,7 +23,7 @@ div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; fl
 """, unsafe_allow_html=True)
 
 # --- データ読み込み関数 ---
-@st.cache_data(ttl=0) # キャッシュを保持しない設定に変更
+@st.cache_data(ttl=0) # キャッシュを完全に殺す
 def get_data(url):
     return pd.read_csv(url).fillna("")
 
@@ -108,10 +106,10 @@ st.subheader(header_str)
 
 content_key = f"diary_content_{date_str}"
 
-# 🔄 【同期不全解消】日付が切り替わった場合、またはメモリにまだ無い場合はスプレッドシートから最新ロード
+# 日付が変わった場合、またはテキスト入力欄の記憶が消された場合は、スプレッドシートから最新をロード
 if st.session_state.previous_date != date_str or content_key not in st.session_state:
-    st.cache_data.clear()  # キャッシュを完全クリア
-    df = get_data(SHEET_URL)  # 再読み込み
+    st.cache_data.clear()  # システム全体のキャッシュクリア
+    df = get_data(SHEET_URL)  # 新しいURLから直接ロード
     
     if date_str in st.session_state.local_updates:
         st.session_state[content_key] = st.session_state.local_updates[date_str]
@@ -123,7 +121,7 @@ if st.session_state.previous_date != date_str or content_key not in st.session_s
 
 content = st.text_area("日記本文", key=content_key, height=180)
 
-# ボタンを横並びに配置（保存ボタンを大きく、同期ボタンをコンパクトに）
+# ボタンエリア
 col_save, col_sync = st.columns([3, 1])
 
 if col_save.button("保存", type="primary", use_container_width=True):
@@ -136,9 +134,14 @@ if col_save.button("保存", type="primary", use_container_width=True):
     else:
         st.error("保存に失敗しました")
 
-# 他端末で更新した内容を1発で引っ張ってくるための手動同期ボタン
+# 🔄 頑固な入力欄キャッシュも完全に吹き飛ばす最強の同期ボタン
 if col_sync.button("🔄 同期", use_container_width=True):
-    st.cache_data.clear()
+    st.cache_data.clear() # データのキャッシュクリア
+    # 今開いている日付の入力欄の記憶（キャッシュ）を強制削除
     if content_key in st.session_state:
         del st.session_state[content_key]
+    # 自分が過去にこの端末で上書きした記憶も一度忘れてリセット
+    if date_str in st.session_state.local_updates:
+        del st.session_state.local_updates[date_str]
     st.rerun()
+これを反映して、片方で「保存」したあと、もう片方で「🔄 同期」を押してみてください。今度こそ一瞬で文字が同期されるはずです！
