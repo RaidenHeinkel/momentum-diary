@@ -1,3 +1,11 @@
+確かにスクリーンの画像（IMG_2961.PNGなど）を見ると、「Momentum Diary」のタイトルの上に不自然な空白がありますね！
+
+これは、Streamlitのアプリ全体（メインコンテナ）に標準で設定されている内側の余白（padding-top）と、スマホ表示の際につく非表示のヘッダー領域が原因です。
+
+CSSを少し調整して、タイトルの上の余白をガッツリと削り、限界まで上詰めに配置されるように修正しました！
+
+Python002（タイトル上詰め修正版）
+Python
 import streamlit as st
 import requests
 import pandas as pd
@@ -10,11 +18,16 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
 
-# --- iPhone SE2 適合CSS ---
+# --- iPhone SE2 適合 ＆ タイトル上詰めCSS ---
 st.markdown("""
 <style>
-.responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 10px; }
-.main .block-container { padding-top: 2rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+/* 💡 アプリ全体のトップ余白（0.5rem）と非表示ヘッダーの余白を完全排除 */
+.main .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+[data-testid="stHeader"] { display: none !important; } /* 上部の透明なヘッダー帯を非表示にして上詰めにする */
+
+/* タイトル自体の余白もリセット */
+.responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-top: 0px !important; margin-bottom: 10px; }
+
 div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
 div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
 .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
