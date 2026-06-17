@@ -31,25 +31,25 @@ if 'local_updates' not in st.session_state:
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- iPhone SE2 適合 ＆ 限界突破・上詰めCSS ---
+# --- 💡 iPhone SE2 適合 ＆ 保存インジケーターが見える適正配置CSS ---
 st.markdown("""
 <style>
-/* 1. 一番外側のアプリコンテナの固定余白を完全にゼロにする */
+/* 1. 外側コンテナの余白調整 */
 .stApp { margin-top: 0px !important; padding-top: 0px !important; }
 [data-testid="stAppViewContainer"] { padding-top: 0px !important; }
 
-/* 2. 隠れた最上部のヘッダー領域を完全に消し去る */
+/* 2. 最上部ヘッダーは消す */
 [data-testid="stHeader"] { display: none !important; height: 0px !important; }
 
-/* 3. コンテンツを包むブロックの padding-top を 0 にし、さらに上に引き上げる */
+/* 3. 🛠️ 限界突破の引き上げを「-2.0rem」に緩和！これで保存中マークや通知が画面内にバッチリ復活します */
 .main .block-container { 
     padding-top: 0px !important; 
-    margin-top: -5.5rem !important; 
+    margin-top: -2.0rem !important; 
     padding-left: 0.5rem !important; 
     padding-right: 0.5rem !important; 
 }
 
-/* タイトル自体の余白も完全にゼロ */
+/* タイトル余白の調整 */
 .responsive-title { 
     font-size: 1.6rem !important; 
     font-weight: bold; 
@@ -136,8 +136,12 @@ for week in cal:
                 current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
             )
             
-            # 💡 日記データがある日（かつ未選択）の場合は日付の前にクールな青の「🔹」を付与
-            button_label = f"🔹{day}" if (has_diary and not is_selected) else str(day)
+            # 💡 日記がある未選択の日には、数字の下にクールなブルーの下線を引くシグナル（文字コード）を付与
+            # 特殊な結合用文字を使い、フォントサイズやボタン幅を一切崩さずに表現します
+            if has_diary and not is_selected:
+                button_label = "".join([c + "\u0332" if c.isdigit() else c for c in str(day)])
+            else:
+                button_label = str(day)
             
             if cols_days[i].button(button_label, key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
                 st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
@@ -174,6 +178,7 @@ col_save, col_sync = st.columns([3, 1])
 
 if col_save.button("保存", type="primary", use_container_width=True):
     payload = {"date": date_str, "header": header_str, "content": content}
+    # 💡 処理中のインジケーター（右上のRunningグルグルやトースト）がこれでしっかり見えるようになります
     response = requests.post(GAS_URL, json=payload)
     if response.status_code == 200:
         st.session_state.local_updates[date_str] = content
