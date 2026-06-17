@@ -10,15 +10,29 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
 
-# --- iPhone SE2 適合 ＆ タイトル上詰めCSS ---
+# --- iPhone SE2 適合 ＆ 限界上詰めCSS ---
 st.markdown("""
 <style>
-/* 💡 アプリ全体のトップ余白（0.5rem）と非表示ヘッダーの余白を完全排除 */
-.main .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
-[data-testid="stHeader"] { display: none !important; } /* 上部の透明なヘッダー帯を非表示にして上詰めにする */
+/* 💡 隠れた最上部のヘッダー領域を完全に消し去る */
+[data-testid="stHeader"] { display: none !important; height: 0px !important; }
 
-/* タイトル自体の余白もリセット */
-.responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-top: 0px !important; margin-bottom: 10px; }
+/* 💡 アプリ全体のトップ余白を完全にゼロにし、上方向に無理やり引き上げる */
+.main .block-container { 
+    padding-top: 0rem !important; 
+    margin-top: -3.5rem !important; /* マイナスマージンで上の余白を強制的に潰す */
+    padding-left: 0.5rem !important; 
+    padding-right: 0.5rem !important; 
+}
+
+/* タイトル自体の余白も限界までリセット */
+.responsive-title { 
+    font-size: 1.6rem !important; 
+    font-weight: bold; 
+    text-align: center; 
+    margin-top: 0px !important; 
+    padding-top: 0px !important;
+    margin-bottom: 8px !important; 
+}
 
 div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
 div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
