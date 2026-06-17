@@ -10,36 +10,45 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6UXrWkViMBqVFvkay
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
 
-# --- 【超重要】スマホの画面幅に絶対収めるための新CSS ---
+# --- 【激狭画面・iPhone SE2専用】CSS強制リライト ---
 st.markdown("""
 <style>
-/* タイトルの文字サイズをスマホ向けに最適化して改行を防ぐ */
+/* タイトルをスマホ向けにコンパクト化 */
 .responsive-title {
-    font-size: 1.8rem !important;
+    font-size: 1.6rem !important;
     font-weight: bold;
     text-align: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
-/* 列の親要素：横並びを固定し、はみ出しを防ぐ */
+/* 外枠の余白を削って画面を広く使う */
+.main .block-container {
+    padding-top: 2rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+}
+/* 親要素：横並びを絶対に固定し、隙間を2pxに極小化 */
 div[data-testid="stHorizontalBlock"] {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     width: 100% !important;
-    gap: 4px !important;
+    gap: 2px !important;
 }
-/* 列の子要素：Streamlitの「幅100%」を解除し、均等に分配する */
-div[data-testid="column"] {
-    width: auto !important; /* スマホ用の100%幅を無効化 */
-    flex: 1 1 0% !important; /* 3列なら1/3、7列なら1/7に自動均等割り */
+/* 子要素（新旧両方のStreamlitの列タグに対応）：幅100%を殺し、1/3 や 1/7 に強制均等分配 */
+div[data-testid="stColumn"], div[data-testid="column"] {
+    width: 0 !important;
+    flex-grow: 1 !important;
+    flex-shrink: 1 !important;
+    flex-basis: 0% !important;
     min-width: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
 }
-/* カレンダーボタン：スマホの幅に合わせて文字や余白を極小化 */
+/* ボタン：左右の余白を0にして、iPhone SE2の幅でも文字が潰れないようにする */
 .stButton > button {
     width: 100% !important;
     padding: 0.4rem 0 !important;
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
     margin: 0 !important;
 }
 /* 曜日ヘッダー */
@@ -48,7 +57,7 @@ div[data-testid="column"] {
     font-size: 0.75rem;
     font-weight: bold;
     color: #888888;
-    margin: 0 0 5px 0;
+    margin: 0 0 3px 0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -73,10 +82,9 @@ if 'view_month' not in st.session_state:
     st.session_state.view_month = st.session_state.selected_date.month
 
 # --- メインエリア UI ---
-# タイトルをレスポンシブ化
 st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_html=True)
 
-# 1. カレンダー操作ボタン（これでスマホでも綺麗に3等分されます）
+# 1. カレンダー操作ボタン
 col_prev, col_today, col_next = st.columns(3)
 if col_prev.button("◀ 前月", use_container_width=True):
     if st.session_state.view_month == 1:
@@ -102,15 +110,15 @@ if col_next.button("翌月 ▶", use_container_width=True):
     st.rerun()
 
 # 現在の表示年月
-st.markdown(f"<h4 style='text-align: center; margin: 10px 0; font-size: 1.1rem;'>{st.session_state.view_year}年 {st.session_state.view_month}月</h4>", unsafe_allow_html=True)
+st.markdown(f"<h4 style='text-align: center; margin: 8px 0; font-size: 1rem;'>{st.session_state.view_year}年 {st.session_state.view_month}月</h4>", unsafe_allow_html=True)
 
-# 2. 曜日ヘッダーの表示（綺麗に7等分されます）
+# 2. 曜日ヘッダーの表示
 weekdays_headers = ["月", "火", "水", "木", "金", "土", "日"]
 cols_header = st.columns(7)
 for i, w in enumerate(weekdays_headers):
     cols_header[i].markdown(f"<p class='weekday-header'>{w}</p>", unsafe_allow_html=True)
 
-# 3. 埋め込みカレンダー本体（綺麗に7等分されます）
+# 3. 埋め込みカレンダー本体
 cal = calendar.monthcalendar(st.session_state.view_year, st.session_state.view_month)
 for week in cal:
     cols_days = st.columns(7)
@@ -153,7 +161,7 @@ if content_key not in st.session_state:
         entry = df[df['date'] == date_str]
         st.session_state[content_key] = entry['content'].values[0] if not entry.empty else ""
 
-content = st.text_area("日記本文", key=content_key, height=220)
+content = st.text_area("日記本文", key=content_key, height=180)
 
 # 保存処理
 if st.button("保存", use_container_width=True):
