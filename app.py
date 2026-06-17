@@ -8,6 +8,9 @@ import calendar
 GAS_URL = "https://script.google.com/macros/s/AKfycbzuP38pZNYdVFX_i3_678YwOhm6MHffqB8vayoEqHvmiKHF8yVX3vEOkHInLqBSANsi/exec"
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/gviz/tq?tqx=out:csv"
 
+# 💡 CSVのURLから、ブラウザで直接開くための通常のスプレッドシートURLを生成
+SPREADSHEET_VIEW_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/edit"
+
 st.set_page_config(page_title="Momentum Diary", layout="centered")
 
 # --- データ読み込み関数 ---
@@ -34,7 +37,7 @@ existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist(
 # --- 上部余白を完全復活させる安全なCSS ---
 st.markdown("""
 <style>
-/* 上詰め用のマイナスマージンをすべて撤廃し、標準の余白を復活（右上のグルグルを完全に露出させます） */
+/* 上詰め用のマイナスマージンをすべて撤廃し、標準 of 余白を復活（右上のグルグルを完全に露出させます） */
 .main .block-container { 
     padding-left: 0.5rem !important; 
     padding-right: 0.5rem !important; 
@@ -61,6 +64,9 @@ div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !importa
 /* テキストエリアの空ラベルが持つ不要な縦余白を完全にゼロにする */
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
 div[data-testid="stTextArea"] { margin-top: -4px !important; }
+
+/* 💡 st.link_button(一覧ボタン)の見た目を通常のst.button(同期など)のサイズ感に完璧に同調させるCSS */
+.stLinkButton > a { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; text-align: center !important; text-decoration: none !important; display: inline-block !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,7 +80,7 @@ if col_prev_year.button("⏪ 前年", use_container_width=True):
     st.session_state.view_year -= 1
     st.rerun()
 
-# 💡 前後10年を選択肢として生成し、プルダウンを設置
+# 前後10年を選択肢として生成し、プルダウンを設置
 year_options = list(range(st.session_state.view_year - 10, st.session_state.view_year + 11))
 selected_year = col_year_select.selectbox(
     "年選択",
@@ -182,8 +188,8 @@ if st.session_state.previous_date != date_str or content_key not in st.session_s
 # 「日記本文」の文字を消去（第一引数を空文字 "" に変更）
 content = st.text_area("", key=content_key, height=180)
 
-# ボタンエリア
-col_save, col_sync = st.columns([3, 1])
+# 💡 ボタンエリア（保存:3, 同期:1, 一覧:1 のスマートな幅比率で分配）
+col_save, col_sync, col_list = st.columns([3, 1, 1])
 
 if col_save.button("保存", type="primary", use_container_width=True):
     payload = {"date": date_str, "header": header_str, "content": content}
@@ -201,3 +207,6 @@ if col_sync.button("🔄 同期", use_container_width=True):
     if date_str in st.session_state.local_updates:
         del st.session_state.local_updates[date_str]
     st.rerun()
+
+# 💡 別タブで直接Googleスプレッドシートを開く「一覧」リンクボタンを配置
+col_list.link_button("📊 一覧", url=SPREADSHEET_VIEW_URL, use_container_width=True)
