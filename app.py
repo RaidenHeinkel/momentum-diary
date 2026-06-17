@@ -31,8 +31,25 @@ if 'local_updates' not in st.session_state:
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# 今日の日付（フォーマット: YYYY-MM-DD）の文字列を作っておく
-selected_date_str = st.session_state.selected_date.strftime("%Y-%m-%d")
+# 今月のデータがある日付のボタンだけをクールブルーに染めるCSSを生成
+diary_btn_css = ""
+for day in range(1, 32):
+    current_loop_date_str = f"{st.session_state.view_year}-{st.session_state.view_month:02d}-{day:02d}"
+    has_diary = current_loop_date_str in existing_dates or (
+        current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
+    )
+    # 日記があり、かつ現在選択されている日でなければCSSターゲットにする
+    if has_diary and current_loop_date_str != st.session_state.selected_date.strftime("%Y-%m-%d"):
+        button_key = f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}"
+        # 💡 Streamlitが自動生成する特定のヘルパーdivおよびボタン要素を、中のテキストベースでピンポイント抽出して色を上書き
+        diary_btn_css += f"""
+        div[data-testid="stColumn"] button[id*="{button_key}"],
+        div[data-testid="column"] button[id*="{button_key}"] {{
+            background-color: #2a4773 !important;
+            color: #ffffff !important;
+            border: 1px solid #1c3254 !important;
+        }}
+        """
 
 # --- iPhone SE2 適合 ＆ 限界突破・上詰めCSS ---
 st.markdown(f"""
@@ -67,14 +84,8 @@ div[data-testid="stColumn"], div[data-testid="column"] {{ width: 0 !important; f
 .stButton > button {{ width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }}
 .weekday-header {{ text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }}
 
-/* 💡 クールなディープブルーを「日記がある日」に確実に上書き適用する仕組み */
-/* 選択中ではない、かつ primary 設定されているボタン（＝日記がある日）を狙い撃ち */
-div[data-testid="stColumn"] .has-diary button[data-testid="stBaseButton-primary"],
-div[data-testid="column"] .has-diary button[data-testid="stBaseButton-primary"] {{
-    background-color: #2a4773 !important;
-    color: #ffffff !important;
-    border: 1px solid #1c3254 !important;
-}}
+/* 💡 生成された日記データありボタン用のカスタム色（クールディープブルー）を適用 */
+{diary_btn_css}
 </style>
 """, unsafe_allow_html=True)
 
@@ -82,7 +93,6 @@ div[data-testid="column"] .has-diary button[data-testid="stBaseButton-primary"] 
 st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_html=True)
 
 # 1. カレンダー操作ボタン（2段構成）
-# 【上段】前年・翌年ボタン
 col_prev_year, col_next_year = st.columns(2)
 if col_prev_year.button("⏪ 前年", use_container_width=True):
     st.session_state.view_year -= 1
@@ -94,7 +104,6 @@ if col_next_year.button("翌年 ⏩", use_container_width=True):
 
 st.markdown("<div style='margin-top: 2px;'></div>", unsafe_allow_html=True)
 
-# 【下段】前月・Today・翌月ボタン
 col_prev_month, col_today, col_next_month = st.columns(3)
 if col_prev_month.button("◀ 前月", use_container_width=True):
     if st.session_state.view_month == 1:
@@ -136,34 +145,17 @@ for week in cal:
         if day == 0:
             cols_days[i].write("")
         else:
-            current_loop_date_str = f"{st.session_state.view_year}-{st.session_state.view_month:02d}-{day:02d}"
-            
-            is_selected = (current_loop_date_str == selected_date_str)
-            
-            has_diary = current_loop_date_str in existing_dates or (
-                current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
+            is_selected = (
+                st.session_state.selected_date.year == st.session_state.view_year and
+                st.session_state.selected_date.month == st.session_state.view_month and
+                st.session_state.selected_date.day == day
             )
+            btn_type = "primary" if is_selected else "secondary"
             
-            # ボタンの種類を決定
-            # 選択中の日は当然「赤（primary）」
-            # 日記がある日もCSS書き換えのためにいったん「primary」にする
-            if is_selected or has_diary:
-                btn_type = "primary"
-            else:
-                btn_type = "secondary"
-            
-            # CSSの判定用に、日記がある日（かつ未選択）の場合はカスタムクラスを付与する仕掛け
-            if has_diary and not is_selected:
-                # ボタンの周りに一時的に識別マークを植え付ける
-                st.markdown('<div class="has-diary">', unsafe_allow_html=True)
-                if cols_days[i].button(str(day), key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
-                    st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                if cols_days[i].button(str(day), key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
-                    st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
-                    st.rerun()
+            # 💡 余計なHTMLを完全排除し、元の完璧に美しく詰まったボタン配置を100%復元
+            if cols_days[i].button(str(day), key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
+                st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
+                st.rerun()
 
 st.markdown("---")
 
