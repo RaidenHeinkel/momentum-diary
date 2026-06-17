@@ -5,7 +5,7 @@ import datetime
 import calendar
 
 # 設定：GASのURLとスプレッドシートのリアルタイムCSV URL
-GAS_URL = "https://script.google.com/macros/s/AKfycbyvIOYuOBYkliCbiUBfQgegIyFq3xO1wiFvB7tD_JP8mkwrRxiOW0AS9FC6XOBzCNa3Pw/exec"
+GAS_URL = "https://script.google.com/macros/s/AKfycbzeb6A7lPbVhcfeKg2BGkh2Vcm9Vxe-5C_MTwRSHUVWmHe3bTAiEjv-9I1GBSLXyC3sJQ/exec"
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/gviz/tq?tqx=out:csv"
 SPREADSHEET_VIEW_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/edit"
 
