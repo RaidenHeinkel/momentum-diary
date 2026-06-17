@@ -54,6 +54,10 @@ div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; fl
 .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
 .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
 
+/* プルダウンメニュー自体の縦余白やラベルを非表示にしてカレンダーと高さを合わせる */
+div[data-testid="stSelectbox"] label { display: none !important; }
+div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !important; }
+
 /* テキストエリアの空ラベルが持つ不要な縦余白を完全にゼロにする */
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
 div[data-testid="stTextArea"] { margin-top: -4px !important; }
@@ -63,10 +67,24 @@ div[data-testid="stTextArea"] { margin-top: -4px !important; }
 # --- メインエリア UI ---
 st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_html=True)
 
-# 1. カレンダー操作ボタン（2段構成）
-col_prev_year, col_next_year = st.columns(2)
+# 1. カレンダー操作ボタン（上段：年操作プルダウン統合版）
+col_prev_year, col_year_select, col_next_year = st.columns([1, 2, 1])
+
 if col_prev_year.button("⏪ 前年", use_container_width=True):
     st.session_state.view_year -= 1
+    st.rerun()
+
+# 💡 前後10年を選択肢として生成し、プルダウンを設置
+year_options = list(range(st.session_state.view_year - 10, st.session_state.view_year + 11))
+selected_year = col_year_select.selectbox(
+    "年選択",
+    options=year_options,
+    index=year_options.index(st.session_state.view_year),
+    label_visibility="collapsed"
+)
+# プルダウンが手動で切り替えられたら状態を更新
+if selected_year != st.session_state.view_year:
+    st.session_state.view_year = selected_year
     st.rerun()
 
 if col_next_year.button("翌年 ⏩", use_container_width=True):
@@ -75,6 +93,7 @@ if col_next_year.button("翌年 ⏩", use_container_width=True):
 
 st.markdown("<div style='margin-top: 2px;'></div>", unsafe_allow_html=True)
 
+# カレンダー操作ボタン（下段：月操作）
 col_prev_month, col_today, col_next_month = st.columns(3)
 if col_prev_month.button("◀ 前月", use_container_width=True):
     if st.session_state.view_month == 1:
@@ -130,7 +149,7 @@ for week in cal:
                 current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
             )
             
-            # 💡 選択されて（赤くなって）いる時でも、日記があれば「🔹」を常につけるように変更
+            # 選択されて（赤くなって）いる時でも、日記があれば「🔹」を常につける
             button_label = f"🔹{day}" if has_diary else str(day)
             
             if cols_days[i].button(button_label, key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
