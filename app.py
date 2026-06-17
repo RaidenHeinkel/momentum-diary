@@ -19,16 +19,17 @@ df = get_data()
 # --- サイドバー (メニュー) ---
 st.sidebar.title("Momentum Diary")
 
-# 今日へジャンプするボタン
-if st.sidebar.button("Today"):
-    st.session_state.selected_date = datetime.date.today()
-
-# カレンダー選択
+# 【修正ポイント①】最初にセッション状態（日付）を初期化
 if 'selected_date' not in st.session_state:
     st.session_state.selected_date = datetime.date.today()
 
-selected_date = st.sidebar.date_input("日付を選択", value=st.session_state.selected_date)
-st.session_state.selected_date = selected_date
+# 今日へジャンプするボタン
+if st.sidebar.button("Today"):
+    st.session_state.selected_date = datetime.date.today()
+    st.rerun()  # 【修正ポイント②】値を今日にした瞬間、即座に画面を再描画して反映！
+
+# カレンダー選択（keyを指定してセッション状態と完全連動させます）
+selected_date = st.sidebar.date_input("日付を選択", key="selected_date")
 
 # --- メインエリア ---
 date_str = selected_date.strftime("%Y-%m-%d")
@@ -37,14 +38,13 @@ header_str = f"{selected_date.year}年{selected_date.month}月{selected_date.day
 
 st.subheader(header_str)
 
-# 【修正ポイント】日付が切り替わったときだけ、スプレッドシートからデータを読み込む
+# 日付が切り替わったときだけ、スプレッドシートからデータを読み込む
 if 'previous_date' not in st.session_state or st.session_state.previous_date != date_str:
     st.session_state.previous_date = date_str
     entry = df[df['date'] == date_str]
-    # 最初に見つかったデータをセッションに一時保存
     st.session_state.current_diary_content = entry['content'].values[0] if not entry.empty else ""
 
-# 入力エリア（keyを使ってセッション状態と直接連動させます）
+# 入力エリア
 content = st.text_area("日記本文", key="current_diary_content", height=300)
 
 # 保存処理
