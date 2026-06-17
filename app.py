@@ -5,7 +5,7 @@ import datetime
 import calendar
 
 # 設定：GASのURLとスプレッドシートのリアルタイムCSV URL
-GAS_URL = "https://script.google.com/macros/s/AKfycbzeb6A7lPbVhcfeKg2BGkh2Vcm9Vxe-5C_MTwRSHUVWmHe3bTAiEjv-9I1GBSLXyC3sJQ/exec"
+GAS_URL = "https://script.google.com/macros/s/AKfycbzuP38pZNYdVFX_i3_678YwOhm6MHffqB8vayoEqHvmiKHF8yVX3vEOkHInLqBSANsi/exec"
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/gviz/tq?tqx=out:csv"
 SPREADSHEET_VIEW_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/edit"
 
@@ -33,14 +33,10 @@ def save_current_diary_if_changed():
     """現在開いている日記に入力変化があれば、自動で裏保存する関数"""
     if st.session_state.previous_date:
         prev_key = f"diary_content_{st.session_state.previous_date}"
-        # 現在セッション状態にある入力値を取得
         if prev_key in st.session_state:
             current_input = st.session_state[prev_key]
             
-            # ローカル保持データ、または最初に読み込んだデータと違うかチェック
-            #（何か1文字でも変更されていたら保存へ進む）
             if current_input != st.session_state.local_updates.get(st.session_state.previous_date, "__NOT_SET__"):
-                # 前の日付オブジェクトを復元してヘッダー文字列を作成
                 p_date = datetime.datetime.strptime(st.session_state.previous_date, "%Y-%m-%d").date()
                 weekdays = ["月", "火", "水", "木", "金", "土", "日"]
                 p_header = f"{p_date.year}年{p_date.month}月{p_date.day}日（{weekdays[p_date.weekday()]}）"
@@ -81,7 +77,13 @@ div[data-testid="stSelectbox"] label { display: none !important; }
 div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !important; }
 
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
-div[data-testid="stTextArea"] { margin-top: -4px !important; }
+
+/* 💡 テキストボックスの上辺が削れないようにz-indexで前面に出し、マージンを少し微調整 */
+div[data-testid="stTextArea"] { 
+    margin-top: -2px !important; 
+    position: relative !important;
+    z-index: 10 !important;
+}
 
 .stLinkButton > a { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; text-align: center !important; text-decoration: none !important; display: inline-block !important; }
 </style>
@@ -94,7 +96,7 @@ st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_htm
 col_prev_year, col_year_select, col_next_year = st.columns([1, 2, 1])
 
 if col_prev_year.button("⏪ 前年", use_container_width=True):
-    save_current_diary_if_changed() # 💡変化があれば自動保存してから移動
+    save_current_diary_if_changed()
     st.session_state.view_year -= 1
     st.rerun()
 
@@ -106,12 +108,12 @@ selected_year = col_year_select.selectbox(
     label_visibility="collapsed"
 )
 if selected_year != st.session_state.view_year:
-    save_current_diary_if_changed() # 💡変化があれば自動保存してから移動
+    save_current_diary_if_changed()
     st.session_state.view_year = selected_year
     st.rerun()
 
 if col_next_year.button("翌年 ⏩", use_container_width=True):
-    save_current_diary_if_changed() # 💡変化があれば自動保存してから移動
+    save_current_diary_if_changed()
     st.session_state.view_year += 1
     st.rerun()
 
@@ -120,7 +122,7 @@ st.markdown("<div style='margin-top: 2px;'></div>", unsafe_allow_html=True)
 # カレンダー操作ボタン（下段：月操作）
 col_prev_month, col_today, col_next_month = st.columns(3)
 if col_prev_month.button("◀ 前月", use_container_width=True):
-    save_current_diary_if_changed() # 💡変化があれば自動保存してから移動
+    save_current_diary_if_changed()
     if st.session_state.view_month == 1:
         st.session_state.view_month = 12
         st.session_state.view_year -= 1
@@ -129,7 +131,7 @@ if col_prev_month.button("◀ 前月", use_container_width=True):
     st.rerun()
 
 if col_today.button("Today", use_container_width=True):
-    save_current_diary_if_changed() # 💡変化があれば自動保存してから移動
+    save_current_diary_if_changed()
     today = datetime.date.today()
     st.session_state.selected_date = today
     st.session_state.view_year = today.year
@@ -137,7 +139,7 @@ if col_today.button("Today", use_container_width=True):
     st.rerun()
 
 if col_next_month.button("翌月 ▶", use_container_width=True):
-    save_current_diary_if_changed() # 💡変化があれば自動保存してから移動
+    save_current_diary_if_changed()
     if st.session_state.view_month == 12:
         st.session_state.view_month = 1
         st.session_state.view_year += 1
@@ -178,7 +180,7 @@ for week in cal:
             button_label = f"🔹{day}" if has_diary else str(day)
             
             if cols_days[i].button(button_label, key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
-                save_current_diary_if_changed() # 💡日付ボタンをタップした時も、変化があれば自動保存！
+                save_current_diary_if_changed()
                 st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
                 st.rerun()
 
@@ -192,7 +194,6 @@ st.markdown(f"<p style='font-size: 0.95rem; font-weight: bold; margin: 8px 0 4px
 
 content_key = f"diary_content_{date_str}"
 
-# 画面切り替えの処理タイミングで読み込み
 if st.session_state.previous_date != date_str or content_key not in st.session_state:
     st.cache_data.clear()
     df = get_data(SHEET_URL)
@@ -203,7 +204,6 @@ if st.session_state.previous_date != date_str or content_key not in st.session_s
         entry = df[df['date'] == date_str]
         val = entry['content'].values[0] if not entry.empty else ""
         st.session_state[content_key] = val
-        # 初回ロード時の値を記憶
         if date_str not in st.session_state.local_updates:
             st.session_state.local_updates[date_str] = val
     
