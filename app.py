@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 
 # 設定：GASのURLとスプレッドシートの公開CSV URL
-GAS_URL = "https://script.google.com/macros/s/AKfycbz2uCE2r4OLFw0CFIinYPV4JAl2IvZadhOej2vsWMxzpI66pmWhkqWmjaZ6RD1LrcN4Pg/exec"
+GAS_URL = "https://script.google.com/macros/s/AKfycbyqky7ZoTQW-DTABKo2Qef2pyESaGzsk776wDfKxauD6t7TaDlb03BVuVqvIjYmokg/exec"
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6UXrWkViMBqVFvkayaXQ76oKeh47-hDe9rbqOEFMAlppFcu-KDrz-MMsPUKFIGcHmjrkT8MmrT7SX/pub?output=csv"
 
 st.set_page_config(page_title="Momentum Diary", layout="centered")
