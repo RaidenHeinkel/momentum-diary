@@ -1,11 +1,3 @@
-確かにスクリーンの画像（IMG_2961.PNGなど）を見ると、「Momentum Diary」のタイトルの上に不自然な空白がありますね！
-
-これは、Streamlitのアプリ全体（メインコンテナ）に標準で設定されている内側の余白（padding-top）と、スマホ表示の際につく非表示のヘッダー領域が原因です。
-
-CSSを少し調整して、タイトルの上の余白をガッツリと削り、限界まで上詰めに配置されるように修正しました！
-
-Python002（タイトル上詰め修正版）
-Python
 import streamlit as st
 import requests
 import pandas as pd
