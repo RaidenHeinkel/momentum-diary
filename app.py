@@ -31,25 +31,33 @@ if 'local_updates' not in st.session_state:
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# 今月のデータがある日付のボタンだけをクールブルーに染めるCSSを生成
+# --- 💡 順番（何番目のボタンか）ベースで色を付けるCSSの生成 ---
+cal = calendar.monthcalendar(st.session_state.view_year, st.session_state.view_month)
 diary_btn_css = ""
-for day in range(1, 32):
-    current_loop_date_str = f"{st.session_state.view_year}-{st.session_state.view_month:02d}-{day:02d}"
-    has_diary = current_loop_date_str in existing_dates or (
-        current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
-    )
-    # 日記があり、かつ現在選択されている日でなければCSSターゲットにする
-    if has_diary and current_loop_date_str != st.session_state.selected_date.strftime("%Y-%m-%d"):
-        button_key = f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}"
-        # 💡 Streamlitが自動生成する特定のヘルパーdivおよびボタン要素を、中のテキストベースでピンポイント抽出して色を上書き
-        diary_btn_css += f"""
-        div[data-testid="stColumn"] button[id*="{button_key}"],
-        div[data-testid="column"] button[id*="{button_key}"] {{
-            background-color: #2a4773 !important;
-            color: #ffffff !important;
-            border: 1px solid #1c3254 !important;
-        }}
-        """
+button_index = 0  # 生成される日付ボタンを通算でカウント
+
+for week in cal:
+    for day in week:
+        if day == 0:
+            continue  # 空白マスはボタンが生成されないのでカウントしない
+        
+        button_index += 1  # 日付ボタンが1つ生成されるごとにインデックスをプラス
+        
+        current_loop_date_str = f"{st.session_state.view_year}-{st.session_state.view_month:02d}-{day:02d}"
+        has_diary = current_loop_date_str in existing_dates or (
+            current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
+        )
+        
+        # 日記があり、かつ現在選択されている日でなければ、その順番のボタンを青く染める
+        if has_diary and current_loop_date_str != st.session_state.selected_date.strftime("%Y-%m-%d"):
+            # カレンダーエリア内にある通算「button_index番目」のセカンダリボタンを狙い撃ち
+            diary_btn_css += f"""
+            .calendar-container div[data-testid="stButton"]:nth-of-type({button_index}) button[data-testid="stBaseButton-secondary"] {{
+                background-color: #2a4773 !important;
+                color: #ffffff !important;
+                border: 1px solid #1c3254 !important;
+            }}
+            """
 
 # --- iPhone SE2 適合 ＆ 限界突破・上詰めCSS ---
 st.markdown(f"""
@@ -84,7 +92,7 @@ div[data-testid="stColumn"], div[data-testid="column"] {{ width: 0 !important; f
 .stButton > button {{ width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }}
 .weekday-header {{ text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }}
 
-/* 💡 生成された日記データありボタン用のカスタム色（クールディープブルー）を適用 */
+/* 💡 特定の順番のボタンだけをクールブルーに変える動的CSSを適用 */
 {diary_btn_css}
 </style>
 """, unsafe_allow_html=True)
@@ -137,8 +145,8 @@ cols_header = st.columns(7)
 for i, w in enumerate(weekdays_headers):
     cols_header[i].markdown(f"<p class='weekday-header'>{w}</p>", unsafe_allow_html=True)
 
-# 3. カレンダー本体
-cal = calendar.monthcalendar(st.session_state.view_year, st.session_state.view_month)
+# 3. カレンダー本体（CSSターゲット用のクラス「calendar-container」で包む）
+st.markdown('<div class="calendar-container">', unsafe_allow_html=True)
 for week in cal:
     cols_days = st.columns(7)
     for i, day in enumerate(week):
@@ -152,10 +160,10 @@ for week in cal:
             )
             btn_type = "primary" if is_selected else "secondary"
             
-            # 💡 余計なHTMLを完全排除し、元の完璧に美しく詰まったボタン配置を100%復元
             if cols_days[i].button(str(day), key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
                 st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
                 st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
