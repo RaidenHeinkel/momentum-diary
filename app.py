@@ -31,10 +31,10 @@ if 'local_updates' not in st.session_state:
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- 💡 上部余白を完全復活させる安全なCSS ---
+# --- 上部余白を完全復活させる安全なCSS ---
 st.markdown("""
 <style>
-/* 1. 上詰め用のマイナスマージンをすべて撤廃し、標準の余白を復活（右上のグルグルを完全に露出させます） */
+/* 上詰め用のマイナスマージンをすべて撤廃し、標準の余白を復活（右上のグルグルを完全に露出させます） */
 .main .block-container { 
     padding-left: 0.5rem !important; 
     padding-right: 0.5rem !important; 
@@ -126,11 +126,8 @@ for week in cal:
                 current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
             )
             
-            # 日記がある未選択の日には下線を引くシグナル（文字コード）を付与
-            if has_diary and not is_selected:
-                button_label = "".join([c + "\u0332" if c.isdigit() else c for c in str(day)])
-            else:
-                button_label = str(day)
+            # 💡 日記がある未選択の日は、リクエスト通り「🔹」マークを復活！
+            button_label = f"🔹{day}" if (has_diary and not is_selected) else str(day)
             
             if cols_days[i].button(button_label, key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
                 st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
@@ -170,7 +167,6 @@ if col_save.button("保存", type="primary", use_container_width=True):
     response = requests.post(GAS_URL, json=payload)
     if response.status_code == 200:
         st.session_state.local_updates[date_str] = content
-        # ポップアップ通知は不要とのことで削除のままにしています
         st.rerun()
     else:
         st.error("保存に失敗しました")
