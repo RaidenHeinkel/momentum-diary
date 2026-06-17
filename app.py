@@ -12,7 +12,9 @@ st.set_page_config(page_title="Momentum Diary", layout="centered")
 # --- データ読み込み ---
 @st.cache_data(ttl=1)
 def get_data():
-    return pd.read_csv(SHEET_URL)
+    # 【修正ポイント】 .fillna("") を追加し、空欄が「nan」になるのを防ぎます
+    # すでにスプレッドシートに入ってしまった「nan」という文字も自動で空欄にリセットされます
+    return pd.read_csv(SHEET_URL).fillna("")
 
 df = get_data()
 
