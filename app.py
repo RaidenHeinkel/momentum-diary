@@ -31,69 +31,38 @@ if 'local_updates' not in st.session_state:
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- 💡 順番（何番目のボタンか）ベースで色を付けるCSSの生成 ---
-cal = calendar.monthcalendar(st.session_state.view_year, st.session_state.view_month)
-diary_btn_css = ""
-button_index = 0  # 生成される日付ボタンを通算でカウント
-
-for week in cal:
-    for day in week:
-        if day == 0:
-            continue  # 空白マスはボタンが生成されないのでカウントしない
-        
-        button_index += 1  # 日付ボタンが1つ生成されるごとにインデックスをプラス
-        
-        current_loop_date_str = f"{st.session_state.view_year}-{st.session_state.view_month:02d}-{day:02d}"
-        has_diary = current_loop_date_str in existing_dates or (
-            current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
-        )
-        
-        # 日記があり、かつ現在選択されている日でなければ、その順番のボタンを青く染める
-        if has_diary and current_loop_date_str != st.session_state.selected_date.strftime("%Y-%m-%d"):
-            # カレンダーエリア内にある通算「button_index番目」のセカンダリボタンを狙い撃ち
-            diary_btn_css += f"""
-            .calendar-container div[data-testid="stButton"]:nth-of-type({button_index}) button[data-testid="stBaseButton-secondary"] {{
-                background-color: #2a4773 !important;
-                color: #ffffff !important;
-                border: 1px solid #1c3254 !important;
-            }}
-            """
-
 # --- iPhone SE2 適合 ＆ 限界突破・上詰めCSS ---
-st.markdown(f"""
+st.markdown("""
 <style>
 /* 1. 一番外側のアプリコンテナの固定余白を完全にゼロにする */
-.stApp {{ margin-top: 0px !important; padding-top: 0px !important; }}
-[data-testid="stAppViewContainer"] {{ padding-top: 0px !important; }}
+.stApp { margin-top: 0px !important; padding-top: 0px !important; }
+[data-testid="stAppViewContainer"] { padding-top: 0px !important; }
 
 /* 2. 隠れた最上部のヘッダー領域を完全に消し去る */
-[data-testid="stHeader"] {{ display: none !important; height: 0px !important; }}
+[data-testid="stHeader"] { display: none !important; height: 0px !important; }
 
 /* 3. コンテンツを包むブロックの padding-top を 0 にし、さらに上に引き上げる */
-.main .block-container {{ 
+.main .block-container { 
     padding-top: 0px !important; 
     margin-top: -5.5rem !important; 
     padding-left: 0.5rem !important; 
     padding-right: 0.5rem !important; 
-}}
+}
 
 /* タイトル自体の余白も完全にゼロ */
-.responsive-title {{ 
+.responsive-title { 
     font-size: 1.6rem !important; 
     font-weight: bold; 
     text-align: center; 
     margin-top: 0px !important; 
     padding-top: 0px !important;
     margin-bottom: 8px !important; 
-}}
+}
 
-div[data-testid="stHorizontalBlock"] {{ display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }}
-div[data-testid="stColumn"], div[data-testid="column"] {{ width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }}
-.stButton > button {{ width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }}
-.weekday-header {{ text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }}
-
-/* 💡 特定の順番のボタンだけをクールブルーに変える動的CSSを適用 */
-{diary_btn_css}
+div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
+div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
+.stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
+.weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -145,14 +114,16 @@ cols_header = st.columns(7)
 for i, w in enumerate(weekdays_headers):
     cols_header[i].markdown(f"<p class='weekday-header'>{w}</p>", unsafe_allow_html=True)
 
-# 3. カレンダー本体（CSSターゲット用のクラス「calendar-container」で包む）
-st.markdown('<div class="calendar-container">', unsafe_allow_html=True)
+# 3. カレンダー本体
+cal = calendar.monthcalendar(st.session_state.view_year, st.session_state.view_month)
 for week in cal:
     cols_days = st.columns(7)
     for i, day in enumerate(week):
         if day == 0:
             cols_days[i].write("")
         else:
+            current_loop_date_str = f"{st.session_state.view_year}-{st.session_state.view_month:02d}-{day:02d}"
+            
             is_selected = (
                 st.session_state.selected_date.year == st.session_state.view_year and
                 st.session_state.selected_date.month == st.session_state.view_month and
@@ -160,10 +131,17 @@ for week in cal:
             )
             btn_type = "primary" if is_selected else "secondary"
             
-            if cols_days[i].button(str(day), key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
+            # 日記データがあるか判定
+            has_diary = current_loop_date_str in existing_dates or (
+                current_loop_date_str in st.session_state.local_updates and st.session_state.local_updates[current_loop_date_str].strip() != ""
+            )
+            
+            # 💡 日記データがある日（かつ未選択）の場合は日付の前にクールな青の「🔹」を付与
+            button_label = f"🔹{day}" if (has_diary and not is_selected) else str(day)
+            
+            if cols_days[i].button(button_label, key=f"btn_{st.session_state.view_year}_{st.session_state.view_month}_{day}", type=btn_type, use_container_width=True):
                 st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
                 st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
