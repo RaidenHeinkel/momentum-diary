@@ -42,9 +42,23 @@ if 'local_updates' not in st.session_state:
 # --- メインエリア UI ---
 st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_html=True)
 
-# 1. カレンダー操作ボタン
-col_prev, col_today, col_next = st.columns(3)
-if col_prev.button("◀ 前月", use_container_width=True):
+# 1. カレンダー操作ボタン（2段構成）
+# 【上段】前年・翌年ボタン
+col_prev_year, col_next_year = st.columns(2)
+if col_prev_year.button("⏪ 前年", use_container_width=True):
+    st.session_state.view_year -= 1
+    st.rerun()
+
+if col_next_year.button("翌年 ⏩", use_container_width=True):
+    st.session_state.view_year += 1
+    st.rerun()
+
+# 隙間を少し空けるためのマージン
+st.markdown("<div style='margin-top: 2px;'></div>", unsafe_allow_html=True)
+
+# 【下段】前月・Today・翌月ボタン
+col_prev_month, col_today, col_next_month = st.columns(3)
+if col_prev_month.button("◀ 前月", use_container_width=True):
     if st.session_state.view_month == 1:
         st.session_state.view_month = 12
         st.session_state.view_year -= 1
@@ -59,7 +73,7 @@ if col_today.button("Today", use_container_width=True):
     st.session_state.view_month = today.month
     st.rerun()
 
-if col_next.button("翌月 ▶", use_container_width=True):
+if col_next_month.button("翌月 ▶", use_container_width=True):
     if st.session_state.view_month == 12:
         st.session_state.view_month = 1
         st.session_state.view_year += 1
@@ -67,6 +81,7 @@ if col_next.button("翌月 ▶", use_container_width=True):
         st.session_state.view_month += 1
     st.rerun()
 
+# 現在の表示年月
 st.markdown(f"<h4 style='text-align: center; margin: 8px 0; font-size: 1rem;'>{st.session_state.view_year}年 {st.session_state.view_month}月</h4>", unsafe_allow_html=True)
 
 # 2. 曜日ヘッダー
