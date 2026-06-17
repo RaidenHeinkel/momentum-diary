@@ -31,20 +31,11 @@ if 'local_updates' not in st.session_state:
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- iPhone SE2 適合 ＆ 右上のRunningグルグルがしっかり見える適正CSS ---
+# --- 💡 上部余白を完全復活させる安全なCSS ---
 st.markdown("""
 <style>
-/* 1. 外側コンテナの余白調整 */
-.stApp { margin-top: 0px !important; padding-top: 0px !important; }
-[data-testid="stAppViewContainer"] { padding-top: 0px !important; }
-
-/* 2. 最上部ヘッダーは非表示にするが、インジケーターが動くための上部余白を確保 */
-[data-testid="stHeader"] { display: none !important; height: 0px !important; }
-
-/* 3. 🛠️ 右上のグルグルインジケーターが絶対に隠れない、かつ極限まで上詰めする絶妙なマージン */
+/* 1. 上詰め用のマイナスマージンをすべて撤廃し、標準の余白を復活（右上のグルグルを完全に露出させます） */
 .main .block-container { 
-    padding-top: 0px !important; 
-    margin-top: -3.2rem !important; 
     padding-left: 0.5rem !important; 
     padding-right: 0.5rem !important; 
 }
@@ -54,11 +45,10 @@ st.markdown("""
     font-size: 1.6rem !important; 
     font-weight: bold; 
     text-align: center; 
-    margin-top: 0px !important; 
-    padding-top: 0px !important;
     margin-bottom: 8px !important; 
 }
 
+/* カレンダーのグリッドとボタンの横幅均等化設定は完璧に維持 */
 div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
 div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
 .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
@@ -180,7 +170,7 @@ if col_save.button("保存", type="primary", use_container_width=True):
     response = requests.post(GAS_URL, json=payload)
     if response.status_code == 200:
         st.session_state.local_updates[date_str] = content
-        # 💡 ポップアップ通知（st.success）を完全に削除しました。
+        # ポップアップ通知は不要とのことで削除のままにしています
         st.rerun()
     else:
         st.error("保存に失敗しました")
