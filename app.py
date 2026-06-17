@@ -23,7 +23,7 @@ div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; fl
 """, unsafe_allow_html=True)
 
 # --- データ読み込み関数 ---
-@st.cache_data(ttl=0) # キャッシュを完全に殺す
+@st.cache_data(ttl=0)
 def get_data(url):
     return pd.read_csv(url).fillna("")
 
@@ -106,10 +106,9 @@ st.subheader(header_str)
 
 content_key = f"diary_content_{date_str}"
 
-# 日付が変わった場合、またはテキスト入力欄の記憶が消された場合は、スプレッドシートから最新をロード
 if st.session_state.previous_date != date_str or content_key not in st.session_state:
-    st.cache_data.clear()  # システム全体のキャッシュクリア
-    df = get_data(SHEET_URL)  # 新しいURLから直接ロード
+    st.cache_data.clear()
+    df = get_data(SHEET_URL)
     
     if date_str in st.session_state.local_updates:
         st.session_state[content_key] = st.session_state.local_updates[date_str]
@@ -134,14 +133,10 @@ if col_save.button("保存", type="primary", use_container_width=True):
     else:
         st.error("保存に失敗しました")
 
-# 🔄 頑固な入力欄キャッシュも完全に吹き飛ばす最強の同期ボタン
 if col_sync.button("🔄 同期", use_container_width=True):
-    st.cache_data.clear() # データのキャッシュクリア
-    # 今開いている日付の入力欄の記憶（キャッシュ）を強制削除
+    st.cache_data.clear()
     if content_key in st.session_state:
         del st.session_state[content_key]
-    # 自分が過去にこの端末で上書きした記憶も一度忘れてリセット
     if date_str in st.session_state.local_updates:
         del st.session_state.local_updates[date_str]
     st.rerun()
-これを反映して、片方で「保存」したあと、もう片方で「🔄 同期」を押してみてください。今度こそ一瞬で文字が同期されるはずです！
