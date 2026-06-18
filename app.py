@@ -26,7 +26,8 @@ def initialize_state():
         'local_updates': {},
         'edit_date': "",
         'edit_header': "",
-        'search_query': ""
+        'search_query': "",
+        'search_key_counter': 0  # ← 検索窓のリセット用カウンタ
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -274,13 +275,20 @@ elif st.session_state.current_page == "list":
     # 3. 🔍 検索バー ＋ クリアボタン
     col_search, col_clear = st.columns([4, 1])
     
+    # 【修正】クリアボタンで「キー自体を更新（カウンターを増やす）」することで強制リセット
     if col_clear.button("検索クリア", use_container_width=True):
         st.session_state.search_query = ""
-        if "diary_search_input" in st.session_state:
-            del st.session_state["diary_search_input"]
+        st.session_state.search_key_counter += 1
         st.rerun()
 
-    search_query = col_search.text_input("", placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
+    # 【修正】keyに動的なカウンターを含める
+    search_query = col_search.text_input(
+        "", 
+        placeholder="🔍 キーワードで日記を検索...", 
+        key=f"diary_search_input_{st.session_state.search_key_counter}", 
+        label_visibility="collapsed"
+    )
+    
     st.session_state.search_query = search_query
 
     # 💡 検索フィルタリング
