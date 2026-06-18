@@ -266,7 +266,7 @@ elif st.session_state.current_page == "list":
     # 2. ヘッダー表示
     col_back, col_title = st.columns([1.3, 4.7])
     if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
-        st.session_state.search_query = ""
+        # 戻る時は検索クエリを保持したまま戻る（検索を解除したい場合は別にクリアする必要がある）
         st.session_state.current_page = "calendar"
         st.rerun()
 
@@ -277,9 +277,8 @@ elif st.session_state.current_page == "list":
     search_query = col_search.text_input("", value=st.session_state.search_query, placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
     st.session_state.search_query = search_query
     
-    if col_clear.button("× クリア", use_container_width=True):
+    if col_clear.button("検索クリア", use_container_width=True):
         st.session_state.search_query = ""
-        # 修正箇所: 直接キーに代入するのではなく、delでキーを削除して初期化する
         if "diary_search_input" in st.session_state:
             del st.session_state["diary_search_input"]
         st.rerun()
