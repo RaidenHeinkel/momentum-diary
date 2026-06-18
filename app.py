@@ -352,4 +352,16 @@ elif st.session_state.current_page == "edit":
         st.session_state.current_page = "list"
         st.rerun()
         
-    col_title.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold
+    col_title.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold; white-space:nowrap;'>📝 日記編集</p>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
+
+    st.markdown(f"### {edit_header}")
+    updated_content = st.text_area("", key=edit_key, height=360)
+
+    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+
+    if st.button("💾 保存", type="primary", use_container_width=True):
+        if save_diary(edit_date, edit_header, updated_content):
+            st.success("保存に成功しました！")
+        else:
+            st.error("保存に失敗しました")
