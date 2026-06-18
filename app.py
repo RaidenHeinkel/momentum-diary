@@ -267,6 +267,7 @@ elif st.session_state.current_page == "list":
     col_back, col_title = st.columns([1.3, 4.7])
     if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
         st.session_state.search_query = ""
+        st.session_state.diary_search_input = ""
         st.session_state.current_page = "calendar"
         st.rerun()
 
@@ -279,6 +280,7 @@ elif st.session_state.current_page == "list":
     
     if col_clear.button("× クリア", use_container_width=True):
         st.session_state.search_query = ""
+        st.session_state.diary_search_input = ""
         st.rerun()
 
     # 💡 検索フィルタリング
