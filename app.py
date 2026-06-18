@@ -62,7 +62,7 @@ def save_current_diary_if_changed():
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- アプリ共通レイアウト用CSSスタイル定義 ---
+# --- アプリ共通レイアウト用CSS ---
 st.markdown("""
 <style>
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
@@ -213,12 +213,30 @@ elif st.session_state.current_page == "list":
     
     st.markdown("""
     <style>
-    .stButton > button {
-        height: auto !important; min-height: 4.5rem; padding: 0.6rem 0.8rem !important;
-        display: flex !important; flex-direction: column !important;
-        justify-content: flex-start !important; align-items: flex-start !important;
-        text-align: left !important; width: 100% !important;
+    /* 全てのボタン（戻る/クリア/リスト項目）の高さを強制統一 */
+    div.stButton > button {
+        height: 42px !important;
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
+    
+    /* 検索入力欄の高さを合わせる */
+    div[data-testid="stTextInput"] > div > div {
+        height: 42px !important;
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+    }
+    
+    /* 日記リスト項目ボタンだけは高さを戻す */
+    button[data-testid="base-button"] {
+        height: auto !important;
+        min-height: 4.5rem !important;
+        padding: 0.6rem 0.8rem !important;
+    }
+
     .stButton > button * {
         text-align: left !important; justify-content: flex-start !important; align-items: flex-start !important;
         margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important;
@@ -229,7 +247,6 @@ elif st.session_state.current_page == "list":
         -webkit-line-clamp: 5 !important; overflow: hidden !important;
         font-size: 0.85rem !important; line-height: 1.4 !important;
     }
-    div[data-testid="stTextInput"] { margin-bottom: 0px !important; }
     </style>
     """, unsafe_allow_html=True)
 
