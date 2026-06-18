@@ -69,6 +69,7 @@ st.markdown("""
 .responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 8px !important; }
 div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
 div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
+.stButton > button { width: 100% !important; padding: 0.4rem 0.5rem !important; font-size: 0.9rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,12 +77,6 @@ div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; fl
 # 画面１：カレンダー画面
 # =====================================================================
 if st.session_state.current_page == "calendar":
-    st.markdown("""
-    <style>
-    .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
-    .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
-    </style>
-    """, unsafe_allow_html=True)
     st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_html=True)
     col_prev_year, col_year_select, col_next_year = st.columns([1, 2, 1])
     if col_prev_year.button("⏪ 前年"): save_current_diary_if_changed(); st.session_state.view_year -= 1; st.rerun()
@@ -97,14 +92,14 @@ if st.session_state.current_page == "calendar":
 
     st.markdown(f"<h4 style='text-align: center; margin: 8px 0; font-size: 1rem;'>{st.session_state.view_year}年 {st.session_state.view_month}月</h4>", unsafe_allow_html=True)
     cols_header = st.columns(7)
-    for i, w in enumerate(["月", "火", "水", "木", "金", "土", "日"]): cols_header[i].markdown(f"<p class='weekday-header'>{w}</p>", unsafe_allow_html=True)
+    for i, w in enumerate(["月", "火", "水", "木", "金", "土", "日"]): cols_header[i].markdown(f"<p style='text-align:center; font-size:0.8rem; font-weight:bold;'>{w}</p>", unsafe_allow_html=True)
     for week in calendar.monthcalendar(st.session_state.view_year, st.session_state.view_month):
         cols_days = st.columns(7)
         for i, day in enumerate(week):
             if day != 0:
                 d_str = f"{st.session_state.view_year}-{st.session_state.view_month:02d}-{day:02d}"
                 is_sel = (st.session_state.selected_date == datetime.date(st.session_state.view_year, st.session_state.view_month, day))
-                if cols_days[i].button(f"🔹{day}" if d_str in existing_dates else str(day), type="primary" if is_sel else "secondary", use_container_width=True):
+                if cols_days[i].button(f"🔹{day}" if d_str in existing_dates else str(day), type="primary" if is_sel else "secondary"):
                     save_current_diary_if_changed(); st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day); st.rerun()
 
     d_str = st.session_state.selected_date.strftime("%Y-%m-%d")
@@ -115,35 +110,36 @@ if st.session_state.current_page == "calendar":
         df = get_data(SHEET_URL); st.session_state[content_key] = st.session_state.local_updates.get(d_str, df[df['date'] == d_str]['content'].values[0] if not df[df['date'] == d_str].empty else ""); st.session_state.previous_date = d_str
     content = st.text_area("", key=content_key, height=180)
     c1, c2, c3 = st.columns([3, 1, 1])
-    if c1.button("保存", type="primary", use_container_width=True): save_diary(d_str, header_str, content); st.rerun()
-    if c2.button("🔄", use_container_width=True): st.cache_data.clear(); st.rerun()
-    if c3.button("📊", use_container_width=True): save_current_diary_if_changed(); st.session_state.current_page = "list"; st.rerun()
+    if c1.button("保存", type="primary"): save_diary(d_str, header_str, content); st.rerun()
+    if c2.button("🔄"): st.cache_data.clear(); st.rerun()
+    if c3.button("📊"): save_current_diary_if_changed(); st.session_state.current_page = "list"; st.rerun()
 
 # =====================================================================
 # 画面２：一覧画面
 # =====================================================================
 elif st.session_state.current_page == "list":
-    st.markdown("""<style>.stButton > button { height: auto !important; min-height: 4.5rem; text-align: left !important; width: 100% !important; } .stButton > button * { text-align: left !important; } </style>""", unsafe_allow_html=True)
     df_list = get_data(SHEET_URL)
     for d, c in st.session_state.local_updates.items():
         if d in df_list['date'].values: df_list.loc[df_list['date'] == d, 'content'] = c
     df_list = df_list[df_list['content'].str.strip() != ''].sort_values(by='date', ascending=False)
 
-    col_back, col_title = st.columns([1.3, 4.7])
-    # メインに戻るときに検索クエリをクリア
-    if col_back.button("⬅️ 戻る", use_container_width=True): st.session_state.search_query = ""; st.session_state.current_page = "calendar"; st.rerun()
-
-    def update_search():
-        st.session_state.search_query = st.session_state.temp_search
+    col_btn, col_count = st.columns([2, 2])
+    if col_btn.button("⬅️ 戻る"): st.session_state.search_query = ""; st.session_state.current_page = "calendar"; st.rerun()
     
-    q_col, c_col = st.columns([4, 1])
-    q_col.text_input("", value=st.session_state.search_query, key="temp_search", placeholder="🔍 キーワード検索...", on_change=update_search, label_visibility="collapsed")
-    if c_col.button("クリア", use_container_width=True): st.session_state.search_query = ""; st.session_state.temp_search = ""; st.rerun()
+    # 検索処理と更新
+    if 'temp_search' not in st.session_state: st.session_state.temp_search = st.session_state.search_query
+    
+    def on_search_change():
+        st.session_state.search_query = st.session_state.temp_search
+
+    q_col, c_col = st.columns([3, 1])
+    q_col.text_input("検索", key="temp_search", value=st.session_state.search_query, placeholder="🔍 キーワード検索...", on_change=on_search_change, label_visibility="collapsed")
+    if c_col.button("クリア"): st.session_state.search_query = ""; st.session_state.temp_search = ""; st.rerun()
 
     if st.session_state.search_query:
         df_list = df_list[df_list['content'].str.contains(st.session_state.search_query, case=False, na=False) | df_list['date'].str.contains(st.session_state.search_query, na=False)]
     
-    col_title.markdown(f"<p style='margin:0; padding-top:6px; font-weight:bold;'>📊 {len(df_list)}件</p>", unsafe_allow_html=True)
+    col_count.markdown(f"<p style='margin:10px 0 0 10px; font-weight:bold;'>📊 {len(df_list)}件</p>", unsafe_allow_html=True)
     with st.container(height=520):
         for idx, row in df_list.iterrows():
             if st.button(f"📅 {row['date']}\n{row['content'][:50]}", key=f"l_{idx}"):
@@ -157,5 +153,5 @@ elif st.session_state.current_page == "edit":
     df = get_data(SHEET_URL)
     val = st.session_state.local_updates.get(st.session_state.edit_date, df[df['date'] == st.session_state.edit_date]['content'].values[0] if not df[df['date'] == st.session_state.edit_date].empty else "")
     new_c = st.text_area("内容", value=val, height=360)
-    if st.button("💾 保存", type="primary", use_container_width=True):
+    if st.button("💾 保存", type="primary"):
         if save_diary(st.session_state.edit_date, st.session_state.edit_header, new_c): st.session_state.current_page = "list"; st.rerun()
