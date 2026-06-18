@@ -57,7 +57,7 @@ def save_current_diary_if_changed():
                 p_header = f"{p_date.year}年{p_date.month}月{p_date.day}日（{weekdays[p_date.weekday()]}）"
                 save_diary(st.session_state.previous_date, p_header, current_input)
 
-# データの先読みと日記あり日付の抽出
+# データの先読み
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
@@ -76,7 +76,6 @@ div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; fl
 # 画面１：カレンダー画面（メイン）
 # =====================================================================
 if st.session_state.current_page == "calendar":
-    # カレンダー画面専用のボタンスタイルCSS
     st.markdown("""
     <style>
     .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
@@ -214,7 +213,6 @@ elif st.session_state.current_page == "list":
     
     st.markdown("""
     <style>
-    /* 1. 一覧画面のすべてのボタンをデフォルトで「完全左寄せ・全幅」にする */
     .stButton > button {
         height: auto !important;
         min-height: 4.5rem;
@@ -226,8 +224,6 @@ elif st.session_state.current_page == "list":
         text-align: left !important;
         width: 100% !important;
     }
-    
-    /* 2. ボタン内部のすべての末端要素のセンタリングを上書き解除 */
     .stButton > button * {
         text-align: left !important;
         justify-content: flex-start !important;
@@ -239,8 +235,6 @@ elif st.session_state.current_page == "list":
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
     }
-    
-    /* 3. 本文プレビュー部分の行数制限（最大5行） */
     .stButton > button p {
         display: -webkit-box !important;
         -webkit-box-orient: vertical !important;
@@ -249,8 +243,6 @@ elif st.session_state.current_page == "list":
         font-size: 0.85rem !important;
         line-height: 1.4 !important;
     }
-
-    /* 4. カラムの中にあるボタン＝「⬅️ 戻る」ボタンだけをピンポイントで通常の中央寄せに戻す */
     div[data-testid="column"] .stButton > button,
     div[data-testid="stColumn"] .stButton > button {
         min-height: auto !important;
@@ -262,8 +254,6 @@ elif st.session_state.current_page == "list":
         align-items: center !important;
         text-align: center !important;
     }
-    
-    /* 「⬅️ 戻る」ボタン内部の要素も中央寄せに戻す */
     div[data-testid="column"] .stButton > button *,
     div[data-testid="stColumn"] .stButton > button * {
         text-align: center !important;
@@ -272,9 +262,12 @@ elif st.session_state.current_page == "list":
         display: inline-block !important;
         width: auto !important;
     }
+    /* 🔍 検索バー周りの余白調整 */
+    div[data-testid="stTextInput"] { margin-bottom: 10px !important; }
     </style>
     """, unsafe_allow_html=True)
 
+    # 1. データの集計
     df_list = get_data(SHEET_URL)
     for d, c in st.session_state.local_updates.items():
         if d in df_list['date'].values:
@@ -288,19 +281,37 @@ elif st.session_state.current_page == "list":
 
     df_list = df_list[df_list['content'].str.strip() != '']
     df_list = df_list.sort_values(by='date', ascending=False).reset_index(drop=True)
-    
-    total_count = len(df_list)
 
+    # 2. ヘッダー表示（戻るボタン ＋ タイトル）
     col_back, col_title = st.columns([1.3, 4.7])
     if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
         st.session_state.current_page = "calendar"
         st.rerun()
-        
-    col_title.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold; white-space:nowrap;'>📊 日記一覧（{total_count}件）</p>", unsafe_allow_html=True)
-    st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
 
+    # 有効な日記がある場合のみ検索を許可
+    total_count = len(df_list)
+    title_placeholder = col_title.empty() # 件数をリアルタイム更新するための器
+
+    # 3. 🔍 検索バーの設置
+    search_query = st.text_input("", placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
+
+    # 💡 検索フィルタリングの実行
+    if search_query:
+        # 内容(content)か日付(date)にヒットするものだけに絞り込む
+        df_list = df_list[
+            df_list['content'].str.contains(search_query, case=False, na=False) |
+            df_list['date'].str.contains(search_query, na=False)
+        ]
+    
+    filtered_count = len(df_list)
+    title_placeholder.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold; white-space:nowrap;'>📊 日記一覧（{filtered_count}件）</p>", unsafe_allow_html=True)
+
+    # 4. リスト表示
     if df_list.empty:
-        st.info("日記データがありません。")
+        if search_query:
+            st.warning(f"「{search_query}」に一致する日記は見つかりませんでした。")
+        else:
+            st.info("日記データがありません。")
     else:
         with st.container(height=520):
             for idx, row in df_list.iterrows():
@@ -308,7 +319,6 @@ elif st.session_state.current_page == "list":
                 if len(content_preview) > 300:
                     content_preview = content_preview[:300] + "..."
                 
-                # 💡 一覧用：日付文字列(YYYY-MM-DD)から自動で曜日を計算して結合する処理
                 try:
                     p_date = datetime.datetime.strptime(row['date'], "%Y-%m-%d").date()
                     weekdays = ["月", "火", "水", "木", "金", "土", "日"]
@@ -316,7 +326,6 @@ elif st.session_state.current_page == "list":
                 except:
                     date_display = row['date']
                 
-                # 💡 日付部分を曜日付きの表示に変更！
                 button_text = f"📅 {date_display}\n{content_preview}"
                 
                 if st.button(button_text, key=f"item_{row['date']}_{idx}", use_container_width=True):
@@ -335,11 +344,7 @@ elif st.session_state.current_page == "list":
 elif st.session_state.current_page == "edit":
     st.markdown("""
     <style>
-    .stButton > button {
-        padding: 0.4rem 0.8rem !important;
-        font-size: 0.9rem !important;
-        height: auto !important;
-    }
+    .stButton > button { padding: 0.4rem 0.8rem !important; font-size: 0.9rem !important; height: auto !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -356,7 +361,6 @@ elif st.session_state.current_page == "edit":
             st.session_state[edit_key] = entry['content'].values[0] if not entry.empty else ""
 
     col_back, col_title = st.columns([1.3, 4.7])
-    
     if col_back.button("⬅️ 戻る", key="back_to_list", use_container_width=True):
         st.session_state.current_page = "list"
         st.rerun()
