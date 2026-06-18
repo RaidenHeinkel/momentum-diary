@@ -15,7 +15,6 @@ CSS = """
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
 .responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 8px !important; }
 .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
-.stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; }
 div[data-testid="stSelectbox"] label { display: none !important; }
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; }
 </style>
@@ -55,7 +54,6 @@ def initialize_state():
             st.session_state[key] = value
 
 def save_current_diary_if_changed():
-    """画面遷移時に変更があれば保存する"""
     if st.session_state.previous_date:
         prev_key = f"diary_content_{st.session_state.previous_date}"
         if prev_key in st.session_state:
@@ -70,7 +68,7 @@ def render_calendar():
     
     # 年選択UI
     c1, c2, c3 = st.columns([1, 2, 1])
-    if c1.button("⏪ 前年"):
+    if c1.button("⏪ 前年", use_container_width=True):
         save_current_diary_if_changed()
         st.session_state.view_year -= 1
         st.rerun()
@@ -82,14 +80,14 @@ def render_calendar():
         st.session_state.view_year = selected_year
         st.rerun()
 
-    if c3.button("翌年 ⏩"):
+    if c3.button("翌年 ⏩", use_container_width=True):
         save_current_diary_if_changed()
         st.session_state.view_year += 1
         st.rerun()
 
     # 月選択UI
     m1, m2, m3 = st.columns(3)
-    if m1.button("◀ 前月"):
+    if m1.button("◀ 前月", use_container_width=True):
         save_current_diary_if_changed()
         if st.session_state.view_month == 1:
             st.session_state.view_month = 12
@@ -98,13 +96,13 @@ def render_calendar():
             st.session_state.view_month -= 1
         st.rerun()
     
-    if m2.button("Today"):
+    if m2.button("Today", use_container_width=True):
         save_current_diary_if_changed()
         today = datetime.date.today()
         st.session_state.update(selected_date=today, view_year=today.year, view_month=today.month)
         st.rerun()
         
-    if m3.button("翌月 ▶"):
+    if m3.button("翌月 ▶", use_container_width=True):
         save_current_diary_if_changed()
         if st.session_state.view_month == 12:
             st.session_state.view_month = 1
@@ -134,7 +132,7 @@ def render_calendar():
             is_selected = (st.session_state.selected_date == datetime.date(st.session_state.view_year, st.session_state.view_month, day))
             has_diary = d_str in existing_dates or (d_str in st.session_state.local_updates and st.session_state.local_updates[d_str].strip() != "")
             
-            if cols[i].button(f"🔹{day}" if has_diary else str(day), type="primary" if is_selected else "secondary"):
+            if cols[i].button(f"🔹{day}" if has_diary else str(day), type="primary" if is_selected else "secondary", use_container_width=True):
                 save_current_diary_if_changed()
                 st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
                 st.rerun()
@@ -155,15 +153,15 @@ def render_calendar():
     content = st.text_area("", key=content_key, height=180)
     
     c_save, c_sync, c_list = st.columns([3, 1, 1])
-    if c_save.button("保存", type="primary"):
+    if c_save.button("保存", type="primary", use_container_width=True):
         if save_diary(date_str, get_formatted_header(selected), content): st.rerun()
         else: st.error("保存失敗")
-    if c_sync.button("🔄 同期"):
+    if c_sync.button("🔄 同期", use_container_width=True):
         st.cache_data.clear()
         if content_key in st.session_state: del st.session_state[content_key]
         if date_str in st.session_state.local_updates: del st.session_state.local_updates[date_str]
         st.rerun()
-    if c_list.button("📊 一覧"):
+    if c_list.button("📊 一覧", use_container_width=True):
         save_current_diary_if_changed()
         st.session_state.current_page = "list"
         st.rerun()
@@ -177,7 +175,7 @@ def render_list():
     
     df = df[df['content'].str.strip() != ''].sort_values(by='date', ascending=False)
     
-    if st.button("⬅️ 戻る"):
+    if st.button("⬅️ 戻る", use_container_width=True):
         st.session_state.current_page = "calendar"
         st.rerun()
     
@@ -187,12 +185,12 @@ def render_list():
     st.subheader(f"日記一覧（{len(df)}件）")
     with st.container(height=520):
         for idx, row in df.iterrows():
-            if st.button(f"📅 {row['date']}\n{row['content'][:100]}...", key=f"btn_{idx}"):
+            if st.button(f"📅 {row['date']}\n{row['content'][:100]}...", key=f"btn_{idx}", use_container_width=True):
                 st.session_state.update(edit_date=row['date'], edit_header=row['header'], current_page="edit")
                 st.rerun()
 
 def render_edit():
-    if st.button("⬅️ 戻る"):
+    if st.button("⬅️ 戻る", use_container_width=True):
         st.session_state.current_page = "list"
         st.rerun()
     
@@ -204,7 +202,7 @@ def render_edit():
         st.session_state[key] = val
         
     content = st.text_area("", key=key, height=360)
-    if st.button("💾 保存", type="primary"):
+    if st.button("💾 保存", type="primary", use_container_width=True):
         if save_diary(st.session_state.edit_date, st.session_state.edit_header, content):
             st.success("保存完了")
         else: st.error("保存失敗")
