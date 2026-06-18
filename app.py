@@ -17,6 +17,19 @@ CSS = """
 .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
 div[data-testid="stSelectbox"] label { display: none !important; }
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; }
+
+/* 一覧画面用のボタン左寄せ強制CSS */
+div[data-testid="stVerticalBlock"] .stButton > button {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    display: flex !important;
+    width: 100% !important;
+}
+div[data-testid="stVerticalBlock"] .stButton > button div {
+    text-align: left !important;
+    width: 100% !important;
+}
 </style>
 """
 
