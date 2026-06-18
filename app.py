@@ -1,3 +1,14 @@
+大変失礼いたしました！バージョンのカウントアップの件、深くお詫び申し上げます。管理はそちらに一本化していただき、今後は勝手にリビジョンを上げず、こちらの正式最新版「Python006」のアップデートとしてコードを修正いたします。
+
+ボタン内の中央寄せや1行並びのせいで、一覧の視認性が悪くなっていましたね。
+ご指摘通り、テキストを確実に左寄せにし、さらにパッと見で分かりやすいよう「1行目に日付、2行目以降に本文」と縦に並ぶ形に大改良しました。
+
+ボタン内のすべての階層構造（divやpタグ）に対して強制的に左寄せ（text-align: left）と上揃え（flex-start）が効くようにCSSを徹底強化しています。
+
+以下が修正を反映した Python006 の最新コードです。
+
+Python006（一覧画面：完全左寄せ＆レイアウト適正化版）
+Python
 import streamlit as st
 import requests
 import pandas as pd
@@ -206,26 +217,41 @@ if st.session_state.current_page == "calendar":
 # =====================================================================
 elif st.session_state.current_page == "list":
     
-    # 💡 一覧画面専用のCSS（ボタン内テキストを最大5行まで折り返し表示）
+    # 💡 一覧画面専用：中の全階層要素を「完全左寄せ・上詰め」にするための強力なCSS
     st.markdown("""
     <style>
     .stButton > button {
         height: auto !important;
-        min-height: 2.5rem;
-        padding: 0.6rem 0.5rem !important;
-        justify-content: flex-start !important; /* ボタン内テキストを左寄せ */
+        min-height: 4.5rem;
+        padding: 0.6rem 0.8rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        text-align: left !important;
     }
+    /* ボタンの内部コンテナやpタグすべてに左寄せを強制 */
+    .stButton > button div, 
+    .stButton > button p, 
+    .stButton > button span,
+    .stButton > button data {
+        text-align: left !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        white-space: pre-wrap !important; /* 改行コードと自動折り返しを有効化 */
+        word-wrap: break-word !important;
+    }
+    /* 本文部分のフォントサイズと行高を整え、最大5行に制限 */
     .stButton > button p {
         display: -webkit-box !important;
         -webkit-box-orient: vertical !important;
-        -webkit-line-clamp: 5 !important; /* 最大5行まで表示 */
+        -webkit-line-clamp: 5 !important;
         overflow: hidden !important;
-        white-space: pre-wrap !important; /* 画面右端で自動折り返し */
-        word-wrap: break-word !important;
-        text-align: left !important;
         font-size: 0.85rem !important;
         line-height: 1.4 !important;
-        margin: 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -255,16 +281,15 @@ elif st.session_state.current_page == "list":
     if df_list.empty:
         st.info("日記データがありません。")
     else:
-        # 💡 行数が増えるのでスクロール窓の縦幅を 340px -> 500px に拡張
-        with st.container(height=500):
+        with st.container(height=520):
             for idx, row in df_list.iterrows():
-                # 長すぎる場合はCSSの前に念のため250文字程度でカットしておく
                 content_preview = row['content']
-                if len(content_preview) > 250:
-                    content_preview = content_preview[:250] + "..."
+                if len(content_preview) > 300:
+                    content_preview = content_preview[:300] + "..."
                 
-                # ボタンのラベル（改行を入れて見やすくしてもOKですが、今回は | で繋ぎます）
-                button_text = f"📅 {row['date']} │ {content_preview}"
+                # 💡 日付の後に「改行(\\n)」を挟むことで、1行目に日付、2行目から本文が綺麗に整列します
+                button_text = f"📅 {row['date']}\n{content_preview}"
+                
                 if st.button(button_text, key=f"item_{row['date']}_{idx}", use_container_width=True):
                     st.session_state.edit_date = row['date']
                     st.session_state.edit_header = row['header']
