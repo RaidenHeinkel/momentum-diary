@@ -17,7 +17,7 @@ def get_data(url):
 
 # --- 状態の初期化 ---
 if 'current_page' not in st.session_state:
-    st.session_state.current_page = "calendar"  # "calendar" (メイン), "list" (一覧), "edit" (編集)
+    st.session_state.current_page = "calendar"
 if 'selected_date' not in st.session_state:
     st.session_state.selected_date = datetime.date.today()
 if 'view_year' not in st.session_state:
@@ -35,7 +35,6 @@ if 'edit_header' not in st.session_state:
 
 # --- 💾 共通の保存通信関数 ---
 def save_diary(date_str, header_str, content_str):
-    """GAS(Java002)へデータを送信して保存する共通関数"""
     payload = {"date": date_str, "header": header_str, "content": content_str}
     try:
         res = requests.post(GAS_URL, json=payload)
@@ -47,7 +46,6 @@ def save_diary(date_str, header_str, content_str):
     return False
 
 def save_current_diary_if_changed():
-    """現在開いている日記に入力変化があれば、自動で裏保存する関数"""
     if st.session_state.previous_date:
         prev_key = f"diary_content_{st.session_state.previous_date}"
         if prev_key in st.session_state:
@@ -66,24 +64,14 @@ existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist(
 # --- アプリ共通CSSスタイル定義 ---
 st.markdown("""
 <style>
-.main .block-container { 
-    padding-left: 0.5rem !important; 
-    padding-right: 0.5rem !important; 
-}
-.responsive-title { 
-    font-size: 1.6rem !important; 
-    font-weight: bold; 
-    text-align: center; 
-    margin-bottom: 8px !important; 
-}
+.main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+.responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 8px !important; }
 div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
 div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
 .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
 .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
-
 div[data-testid="stSelectbox"] label { display: none !important; }
 div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !important; }
-
 div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
 div[data-testid="stTextArea"] { margin-top: 4px !important; }
 div[data-testid="stTextArea"] > div { position: relative !important; }
@@ -97,9 +85,7 @@ div[data-testid="stTextArea"] > div { position: relative !important; }
 if st.session_state.current_page == "calendar":
     st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_html=True)
 
-    # 1. カレンダー操作ボタン（上段：年操作）
     col_prev_year, col_year_select, col_next_year = st.columns([1, 2, 1])
-
     if col_prev_year.button("⏪ 前年", use_container_width=True):
         save_current_diary_if_changed()
         st.session_state.view_year -= 1
@@ -119,7 +105,6 @@ if st.session_state.current_page == "calendar":
 
     st.markdown("<div style='margin-top: 2px;'></div>", unsafe_allow_html=True)
 
-    # カレンダー操作ボタン（下段：月操作）
     col_prev_month, col_today, col_next_month = st.columns(3)
     if col_prev_month.button("◀ 前月", use_container_width=True):
         save_current_diary_if_changed()
@@ -147,16 +132,13 @@ if st.session_state.current_page == "calendar":
             st.session_state.view_month += 1
         st.rerun()
 
-    # 現在の表示年月
     st.markdown(f"<h4 style='text-align: center; margin: 8px 0; font-size: 1rem;'>{st.session_state.view_year}年 {st.session_state.view_month}月</h4>", unsafe_allow_html=True)
 
-    # 2. 曜日ヘッダー
     weekdays_headers = ["月", "火", "水", "木", "金", "土", "日"]
     cols_header = st.columns(7)
     for i, w in enumerate(weekdays_headers):
         cols_header[i].markdown(f"<p class='weekday-header'>{w}</p>", unsafe_allow_html=True)
 
-    # 3. カレンダー本体
     cal = calendar.monthcalendar(st.session_state.view_year, st.session_state.view_month)
     for week in cal:
         cols_days = st.columns(7)
@@ -175,7 +157,6 @@ if st.session_state.current_page == "calendar":
                     st.session_state.selected_date = datetime.date(st.session_state.view_year, st.session_state.view_month, day)
                     st.rerun()
 
-    # 4. 日記入力セクション
     selected_date = st.session_state.selected_date
     date_str = selected_date.strftime("%Y-%m-%d")
     weekdays = ["月", "火", "水", "木", "金", "土", "日"]
@@ -199,7 +180,6 @@ if st.session_state.current_page == "calendar":
 
     content = st.text_area("", key=content_key, height=180)
 
-    # ボタンエリア
     col_save, col_sync, col_list = st.columns([3, 1, 1])
     if col_save.button("保存", type="primary", use_container_width=True):
         if save_diary(date_str, header_str, content):
@@ -215,9 +195,8 @@ if st.session_state.current_page == "calendar":
             del st.session_state.local_updates[date_str]
         st.rerun()
 
-    # 💡 外部へのリンクではなく、アプリ内の「一覧画面」へ遷移させるボタンに変更
     if col_list.button("📊 一覧", use_container_width=True):
-        save_current_diary_if_changed() # 変化があれば自動保存
+        save_current_diary_if_changed()
         st.session_state.current_page = "list"
         st.rerun()
 
@@ -226,7 +205,31 @@ if st.session_state.current_page == "calendar":
 # 画面２：一覧画面
 # =====================================================================
 elif st.session_state.current_page == "list":
-    # ナビゲーションバー（戻るボタンとタイトル）
+    
+    # 💡 一覧画面専用のCSS（ボタン内テキストを最大5行まで折り返し表示）
+    st.markdown("""
+    <style>
+    .stButton > button {
+        height: auto !important;
+        min-height: 2.5rem;
+        padding: 0.6rem 0.5rem !important;
+        justify-content: flex-start !important; /* ボタン内テキストを左寄せ */
+    }
+    .stButton > button p {
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 5 !important; /* 最大5行まで表示 */
+        overflow: hidden !important;
+        white-space: pre-wrap !important; /* 画面右端で自動折り返し */
+        word-wrap: break-word !important;
+        text-align: left !important;
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+        margin: 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     col_back, col_title = st.columns([1, 4])
     if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
         st.session_state.current_page = "calendar"
@@ -234,10 +237,8 @@ elif st.session_state.current_page == "list":
     col_title.markdown("<h3 style='margin:0; padding-top:4px;'>📊 日記一覧</h3>", unsafe_allow_html=True)
     st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
 
-    # データの取得と統合
     df_list = get_data(SHEET_URL)
     
-    # 未保存のローカル更新をリストに反映
     for d, c in st.session_state.local_updates.items():
         if d in df_list['date'].values:
             df_list.loc[df_list['date'] == d, 'content'] = c
@@ -248,27 +249,25 @@ elif st.session_state.current_page == "list":
                 p_header = f"{p_date.year}年{p_date.month}月{p_date.day}日（{weekdays[p_date.weekday()]}）"
                 df_list = pd.concat([df_list, pd.DataFrame([{"date": d, "header": p_header, "content": c}])], ignore_index=True)
 
-    # 本文があるものだけに絞り込み、新しい日付順にソート
     df_list = df_list[df_list['content'].str.strip() != '']
     df_list = df_list.sort_values(by='date', ascending=False).reset_index(drop=True)
 
     if df_list.empty:
         st.info("日記データがありません。")
     else:
-        # 💡 表示5行固定の高さを持つ「スクロール可能なコンテナ」
-        with st.container(height=340):
+        # 💡 行数が増えるのでスクロール窓の縦幅を 340px -> 500px に拡張
+        with st.container(height=500):
             for idx, row in df_list.iterrows():
-                # 本文の一行プレビュー（改行をスペースに変換）
-                snippet = row['content'].replace('\n', ' ')
-                if len(snippet) > 28:
-                    snippet = snippet[:28] + "..."
+                # 長すぎる場合はCSSの前に念のため250文字程度でカットしておく
+                content_preview = row['content']
+                if len(content_preview) > 250:
+                    content_preview = content_preview[:250] + "..."
                 
-                # 行全体のボタン。タップすると対象日付の「編集画面」へ
-                button_text = f"📅 {row['date']} │ {snippet}"
+                # ボタンのラベル（改行を入れて見やすくしてもOKですが、今回は | で繋ぎます）
+                button_text = f"📅 {row['date']} │ {content_preview}"
                 if st.button(button_text, key=f"item_{row['date']}_{idx}", use_container_width=True):
                     st.session_state.edit_date = row['date']
                     st.session_state.edit_header = row['header']
-                    # 編集画面用に、すでに保持している内容をクリアして最新状態をセットする準備
                     edit_key = f"edit_content_{row['date']}"
                     if edit_key in st.session_state:
                         del st.session_state[edit_key]
@@ -284,7 +283,6 @@ elif st.session_state.current_page == "edit":
     edit_header = st.session_state.edit_header
     edit_key = f"edit_content_{edit_date}"
 
-    # 編集用初期データのロード
     if edit_key not in st.session_state:
         if edit_date in st.session_state.local_updates:
             st.session_state[edit_key] = st.session_state.local_updates[edit_date]
@@ -293,26 +291,22 @@ elif st.session_state.current_page == "edit":
             entry = df_edit[df_edit['date'] == edit_date]
             st.session_state[edit_key] = entry['content'].values[0] if not entry.empty else ""
 
-    # ナビゲーションバー（戻るボタンとタイトル）
     col_back, col_title = st.columns([1, 4])
     
-    # 💡 戻るボタンが押されたタイミングで【自動保存】して一覧画面へ戻る
     if col_back.button("⬅️ 戻る", key="back_to_list", use_container_width=True):
         current_content = st.session_state[edit_key]
-        save_diary(edit_date, edit_header, current_content)  # 自動保存を実行！
+        save_diary(edit_date, edit_header, current_content)
         st.session_state.current_page = "list"
         st.rerun()
         
     col_title.markdown(f"<h4 style='margin:0; padding-top:6px;'>📝 日記編集</h4>", unsafe_allow_html=True)
     st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
 
-    # 💡 画面全体を大胆に使った編集エリア
     st.markdown(f"### {edit_header}")
     updated_content = st.text_area("", key=edit_key, height=360)
 
     st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
 
-    # 💾 手動保存ボタン
     if st.button("💾 保存", type="primary", use_container_width=True):
         if save_diary(edit_date, edit_header, updated_content):
             st.success("保存に成功しました！")
