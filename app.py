@@ -16,22 +16,23 @@ def get_data(url):
     return pd.read_csv(url).fillna("")
 
 # --- 状態の初期化 ---
-if 'current_page' not in st.session_state:
-    st.session_state.current_page = "calendar"
-if 'selected_date' not in st.session_state:
-    st.session_state.selected_date = datetime.date.today()
-if 'view_year' not in st.session_state:
-    st.session_state.view_year = st.session_state.selected_date.year
-if 'view_month' not in st.session_state:
-    st.session_state.view_month = st.session_state.selected_date.month
-if 'previous_date' not in st.session_state:
-    st.session_state.previous_date = None
-if 'local_updates' not in st.session_state:
-    st.session_state.local_updates = {}
-if 'edit_date' not in st.session_state:
-    st.session_state.edit_date = ""
-if 'edit_header' not in st.session_state:
-    st.session_state.edit_header = ""
+def initialize_state():
+    defaults = {
+        'current_page': "calendar",
+        'selected_date': datetime.date.today(),
+        'view_year': datetime.date.today().year,
+        'view_month': datetime.date.today().month,
+        'previous_date': None,
+        'local_updates': {},
+        'edit_date': "",
+        'edit_header': "",
+        'search_query': ""  # 検索状態を保持するためのキーを追加
+    }
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+initialize_state()
 
 # --- 💾 共通の保存通信関数 ---
 def save_diary(date_str, header_str, content_str):
@@ -61,7 +62,7 @@ def save_current_diary_if_changed():
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- アプリ共通レイアウト用CSS ---
+# --- アプリ共通レイアウト用CSSスタイル定義（ボタン以外） ---
 st.markdown("""
 <style>
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
@@ -211,10 +212,8 @@ if st.session_state.current_page == "calendar":
 # =====================================================================
 elif st.session_state.current_page == "list":
     
-    # 強力な左寄せCSS定義
     st.markdown("""
     <style>
-    /* リスト内のボタンを左寄せにするための定義 */
     .stButton > button {
         height: auto !important;
         min-height: 4.5rem;
@@ -237,7 +236,14 @@ elif st.session_state.current_page == "list":
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
     }
-    /* 検索バー周りの余白調整 */
+    .stButton > button p {
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 5 !important;
+        overflow: hidden !important;
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+    }
     div[data-testid="stTextInput"] { margin-bottom: 10px !important; }
     </style>
     """, unsafe_allow_html=True)
@@ -259,16 +265,19 @@ elif st.session_state.current_page == "list":
 
     # 2. ヘッダー表示
     col_back, col_title = st.columns([1.3, 4.7])
+    # 戻るボタンでメイン画面に行くときは検索クエリをクリア
     if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
+        st.session_state.search_query = ""
         st.session_state.current_page = "calendar"
         st.rerun()
 
-    total_count = len(df_list)
-    title_placeholder = col_title.empty() 
+    title_placeholder = col_title.empty()
 
-    # 3. 🔍 検索バーの設置
-    search_query = st.text_input("", placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
+    # 3. 🔍 検索バーの設置 (session_stateにバインド)
+    search_query = st.text_input("", value=st.session_state.search_query, placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
+    st.session_state.search_query = search_query
 
+    # 💡 検索フィルタリング
     if search_query:
         df_list = df_list[
             df_list['content'].str.contains(search_query, case=False, na=False) |
@@ -314,7 +323,6 @@ elif st.session_state.current_page == "list":
 # 画面３：全面編集画面
 # =====================================================================
 elif st.session_state.current_page == "edit":
-    # 編集画面用に必要最低限のスタイル
     st.markdown("""
     <style>
     .stButton > button { padding: 0.4rem 0.8rem !important; font-size: 0.9rem !important; height: auto !important; }
@@ -334,6 +342,7 @@ elif st.session_state.current_page == "edit":
             st.session_state[edit_key] = entry['content'].values[0] if not entry.empty else ""
 
     col_back, col_title = st.columns([1.3, 4.7])
+    # 戻るボタンでリスト画面に戻るときは検索クエリをクリアしない
     if col_back.button("⬅️ 戻る", key="back_to_list", use_container_width=True):
         st.session_state.current_page = "list"
         st.rerun()
