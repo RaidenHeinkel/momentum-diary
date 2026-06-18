@@ -62,19 +62,19 @@ def save_current_diary_if_changed():
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- アプリ共通レイアウト用CSS ---
+# --- アプリ共通レイアウト用CSSスタイル定義（ボタン以外） ---
 st.markdown("""
 <style>
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
 .responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 8px !important; }
-div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 4px !important; }
-div[data-testid="stColumn"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
+div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
+div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
 # =====================================================================
-# 画面１：カレンダー画面
+# 画面１：カレンダー画面（メイン）
 # =====================================================================
 if st.session_state.current_page == "calendar":
     st.markdown("""
@@ -85,6 +85,7 @@ if st.session_state.current_page == "calendar":
     div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !important; }
     div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
     div[data-testid="stTextArea"] { margin-top: 4px !important; }
+    div[data-testid="stTextArea"] > div { position: relative !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -213,31 +214,37 @@ elif st.session_state.current_page == "list":
     
     st.markdown("""
     <style>
-    /* 1. 検索窓の高さを固定 */
-    div[data-testid="stTextInput"] > div > div {
-        height: 42px !important;
-    }
-    
-    /* 2. ページ上部のボタンだけを強制的に42pxに揃える */
-    /* リストコンテナの外にあるボタンのみを対象にする強力なセレクタ */
-    div[data-testid="stHorizontalBlock"] button {
-        height: 42px !important;
-        margin-top: 0px !important;
-    }
-    
-    /* 3. 【重要】リスト内のボタン（st.containerの中にあるボタン）をautoに戻す */
-    div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] div > button {
+    .stButton > button {
         height: auto !important;
-        min-height: 80px !important;
+        min-height: 4.5rem;
         padding: 0.6rem 0.8rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+        width: 100% !important;
     }
-
-    /* ボタン内のテキスト折り返し設定 */
     .stButton > button * {
-        text-align: left !important; justify-content: flex-start !important; align-items: flex-start !important;
-        margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important;
-        white-space: pre-wrap !important; word-wrap: break-word !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        display: block !important;
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
     }
+    .stButton > button p {
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 5 !important;
+        overflow: hidden !important;
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+    }
+    div[data-testid="stTextInput"] { margin-bottom: 10px !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -256,19 +263,23 @@ elif st.session_state.current_page == "list":
     df_list = df_list[df_list['content'].str.strip() != '']
     df_list = df_list.sort_values(by='date', ascending=False).reset_index(drop=True)
 
-    # 2. ２段レイアウトの構築
-    col_back, col_title = st.columns([1.5, 4.5])
-    if col_back.button("⬅️ 戻る", use_container_width=True):
+    # 2. ヘッダー表示
+    col_back, col_title = st.columns([1.3, 4.7])
+    if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
         st.session_state.search_query = ""
         st.session_state.current_page = "calendar"
         st.rerun()
 
+    title_placeholder = col_title.empty()
+
+    # 3. 🔍 検索バー ＋ クリアボタン
     col_search, col_clear = st.columns([4, 1])
     search_query = col_search.text_input("", value=st.session_state.search_query, placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
     st.session_state.search_query = search_query
-
+    
     if col_clear.button("× クリア", use_container_width=True):
         st.session_state.search_query = ""
+        # 修正箇所: 直接キーに代入するのではなく、delでキーを削除して初期化する
         if "diary_search_input" in st.session_state:
             del st.session_state["diary_search_input"]
         st.rerun()
@@ -280,12 +291,13 @@ elif st.session_state.current_page == "list":
             df_list['date'].str.contains(search_query, na=False)
         ]
     
-    col_title.markdown(f"<p style='margin:28px 0 0 0; font-size:1.1rem; font-weight:bold;'>📊 日記一覧（{len(df_list)}件）</p>", unsafe_allow_html=True)
+    filtered_count = len(df_list)
+    title_placeholder.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold; white-space:nowrap;'>📊 日記一覧（{filtered_count}件）</p>", unsafe_allow_html=True)
 
     # 4. リスト表示
     if df_list.empty:
         if search_query:
-            st.warning(f"「{search_query}」は見つかりませんでした。")
+            st.warning(f"「{search_query}」に一致する日記は見つかりませんでした。")
         else:
             st.info("日記データがありません。")
     else:
