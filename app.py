@@ -68,7 +68,7 @@ st.markdown("""
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
 .responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 8px !important; }
 div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 4px !important; }
-div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
+div[data-testid="stColumn"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -218,16 +218,17 @@ elif st.session_state.current_page == "list":
         height: 42px !important;
     }
     
-    /* 2. ヘッダーのボタン（戻る・クリア）の高さを検索窓と揃える */
-    div[data-testid="stHorizontalBlock"] > div:not(:has([data-testid="stVerticalBlock"])) button {
+    /* 2. ページ上部のボタンだけを強制的に42pxに揃える */
+    /* リストコンテナの外にあるボタンのみを対象にする強力なセレクタ */
+    div[data-testid="stHorizontalBlock"] button {
         height: 42px !important;
-        margin-top: 24px !important;
+        margin-top: 0px !important;
     }
     
-    /* 3. リスト表示エリア内のボタンだけは高さ自動（本文表示のため） */
-    div[data-testid="stVerticalBlock"] > div > div > div > div[data-testid="stVerticalBlock"] button {
+    /* 3. 【重要】リスト内のボタン（st.containerの中にあるボタン）をautoに戻す */
+    div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] div > button {
         height: auto !important;
-        min-height: 4.5rem !important;
+        min-height: 80px !important;
         padding: 0.6rem 0.8rem !important;
     }
 
@@ -236,11 +237,6 @@ elif st.session_state.current_page == "list":
         text-align: left !important; justify-content: flex-start !important; align-items: flex-start !important;
         margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important;
         white-space: pre-wrap !important; word-wrap: break-word !important;
-    }
-    .stButton > button p {
-        display: -webkit-box !important; -webkit-box-orient: vertical !important;
-        -webkit-line-clamp: 5 !important; overflow: hidden !important;
-        font-size: 0.85rem !important; line-height: 1.4 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -261,14 +257,12 @@ elif st.session_state.current_page == "list":
     df_list = df_list.sort_values(by='date', ascending=False).reset_index(drop=True)
 
     # 2. ２段レイアウトの構築
-    # 上段：戻るボタン ＋ タイトル
     col_back, col_title = st.columns([1.5, 4.5])
     if col_back.button("⬅️ 戻る", use_container_width=True):
         st.session_state.search_query = ""
         st.session_state.current_page = "calendar"
         st.rerun()
 
-    # 下段：検索窓 ＋ クリアボタン
     col_search, col_clear = st.columns([4, 1])
     search_query = col_search.text_input("", value=st.session_state.search_query, placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
     st.session_state.search_query = search_query
