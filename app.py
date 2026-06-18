@@ -206,10 +206,10 @@ if st.session_state.current_page == "calendar":
 # =====================================================================
 elif st.session_state.current_page == "list":
     
-    # 💡 一覧画面専用：中の全階層要素を「完全左寄せ・上詰め」にするための強力なCSS
+    # 💡 戻るボタンを巻き込まないよう、スクロールコンテナ（st.container）内部の日記ボタンだけを完全左寄せにするCSS
     st.markdown("""
     <style>
-    .stButton > button {
+    div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button {
         height: auto !important;
         min-height: 4.5rem;
         padding: 0.6rem 0.8rem !important;
@@ -219,22 +219,19 @@ elif st.session_state.current_page == "list":
         align-items: flex-start !important;
         text-align: left !important;
     }
-    /* ボタンの内部コンテナやpタグすべてに左寄せを強制 */
-    .stButton > button div, 
-    .stButton > button p, 
-    .stButton > button span,
-    .stButton > button data {
+    div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button div, 
+    div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button p, 
+    div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button span {
         text-align: left !important;
         justify-content: flex-start !important;
         align-items: flex-start !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        white-space: pre-wrap !important; /* 改行コードと自動折り返しを有効化 */
+        white-space: pre-wrap !important;
         word-wrap: break-word !important;
     }
-    /* 本文部分のフォントサイズと行高を整え、最大5行に制限 */
-    .stButton > button p {
+    div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button p {
         display: -webkit-box !important;
         -webkit-box-orient: vertical !important;
         -webkit-line-clamp: 5 !important;
@@ -245,15 +242,8 @@ elif st.session_state.current_page == "list":
     </style>
     """, unsafe_allow_html=True)
 
-    col_back, col_title = st.columns([1, 4])
-    if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
-        st.session_state.current_page = "calendar"
-        st.rerun()
-    col_title.markdown("<h3 style='margin:0; padding-top:4px;'>📊 日記一覧</h3>", unsafe_allow_html=True)
-    st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
-
+    # 先にデータを集計して件数を割り出す
     df_list = get_data(SHEET_URL)
-    
     for d, c in st.session_state.local_updates.items():
         if d in df_list['date'].values:
             df_list.loc[df_list['date'] == d, 'content'] = c
@@ -266,6 +256,18 @@ elif st.session_state.current_page == "list":
 
     df_list = df_list[df_list['content'].str.strip() != '']
     df_list = df_list.sort_values(by='date', ascending=False).reset_index(drop=True)
+    
+    total_count = len(df_list) # 有効な日記の総件数
+
+    # 💡 戻るボタンのカラムを極小（0.6）にし、文字を「⬅️」にすることでコンパクト化
+    col_back, col_title = st.columns([0.6, 5.4])
+    if col_back.button("⬅️", key="back_to_cal", use_container_width=True):
+        st.session_state.current_page = "calendar"
+        st.rerun()
+        
+    # タイトルに件数を埋め込み
+    col_title.markdown(f"<h3 style='margin:0; padding-top:4px;'>📊 日記一覧（{total_count}件）</h3>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
 
     if df_list.empty:
         st.info("日記データがありません。")
@@ -276,7 +278,6 @@ elif st.session_state.current_page == "list":
                 if len(content_preview) > 300:
                     content_preview = content_preview[:300] + "..."
                 
-                # 💡 日付の後に「改行(\\n)」を挟むことで、1行目に日付、2行目から本文が綺麗に整列します
                 button_text = f"📅 {row['date']}\n{content_preview}"
                 
                 if st.button(button_text, key=f"item_{row['date']}_{idx}", use_container_width=True):
@@ -305,9 +306,9 @@ elif st.session_state.current_page == "edit":
             entry = df_edit[df_edit['date'] == edit_date]
             st.session_state[edit_key] = entry['content'].values[0] if not entry.empty else ""
 
-    col_back, col_title = st.columns([1, 4])
-    
-    if col_back.button("⬅️ 戻る", key="back_to_list", use_container_width=True):
+    # 💡 編集画面側の戻るボタンも同様に極小化
+    col_back, col_title = st.columns([0.6, 5.4])
+    if col_back.button("⬅️", key="back_to_list", use_container_width=True):
         current_content = st.session_state[edit_key]
         save_diary(edit_date, edit_header, current_content)
         st.session_state.current_page = "list"
