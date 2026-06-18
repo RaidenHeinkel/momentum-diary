@@ -62,7 +62,7 @@ def save_current_diary_if_changed():
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- アプリ共通レイアウト用CSSスタイル定義（ボタン以外） ---
+# --- アプリ共通レイアウト用CSS ---
 st.markdown("""
 <style>
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
@@ -74,7 +74,7 @@ div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; fl
 
 
 # =====================================================================
-# 画面１：カレンダー画面（メイン）
+# 画面１：カレンダー画面
 # =====================================================================
 if st.session_state.current_page == "calendar":
     st.markdown("""
@@ -266,7 +266,6 @@ elif st.session_state.current_page == "list":
     # 2. ヘッダー表示
     col_back, col_title = st.columns([1.3, 4.7])
     if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
-        # 戻る時は検索クエリを保持したまま戻る（検索を解除したい場合は別にクリアする必要がある）
         st.session_state.current_page = "calendar"
         st.rerun()
 
@@ -274,13 +273,16 @@ elif st.session_state.current_page == "list":
 
     # 3. 🔍 検索バー ＋ クリアボタン
     col_search, col_clear = st.columns([4, 1])
-    search_query = col_search.text_input("", value=st.session_state.search_query, placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
+    
+    # 修正：value引数を削除。key="diary_search_input"だけで状態を管理します
+    search_query = col_search.text_input("", placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
+    
+    # 検索窓が空でない場合、それを検索クエリとして使用（保持機能）
     st.session_state.search_query = search_query
     
     if col_clear.button("検索クリア", use_container_width=True):
         st.session_state.search_query = ""
-        if "diary_search_input" in st.session_state:
-            del st.session_state["diary_search_input"]
+        st.session_state["diary_search_input"] = "" # これで強制的に空にする
         st.rerun()
 
     # 💡 検索フィルタリング
