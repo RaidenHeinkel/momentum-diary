@@ -61,20 +61,13 @@ def save_current_diary_if_changed():
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- アプリ共通CSSスタイル定義 ---
+# --- アプリ共通レイアウト用CSSスタイル定義（ボタン以外） ---
 st.markdown("""
 <style>
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
 .responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 8px !important; }
 div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
 div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
-.stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
-.weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
-div[data-testid="stSelectbox"] label { display: none !important; }
-div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !important; }
-div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
-div[data-testid="stTextArea"] { margin-top: 4px !important; }
-div[data-testid="stTextArea"] > div { position: relative !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -83,6 +76,19 @@ div[data-testid="stTextArea"] > div { position: relative !important; }
 # 画面１：カレンダー画面（メイン）
 # =====================================================================
 if st.session_state.current_page == "calendar":
+    # カレンダー画面専用のボタンスタイルCSS
+    st.markdown("""
+    <style>
+    .stButton > button { width: 100% !important; padding: 0.4rem 0 !important; font-size: 0.75rem !important; margin: 0 !important; }
+    .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
+    div[data-testid="stSelectbox"] label { display: none !important; }
+    div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !important; }
+    div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
+    div[data-testid="stTextArea"] { margin-top: 4px !important; }
+    div[data-testid="stTextArea"] > div { position: relative !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.markdown("<h1 class='responsive-title'>Momentum Diary</h1>", unsafe_allow_html=True)
 
     col_prev_year, col_year_select, col_next_year = st.columns([1, 2, 1])
@@ -206,19 +212,37 @@ if st.session_state.current_page == "calendar":
 # =====================================================================
 elif st.session_state.current_page == "list":
     
-    # 💡 戻るボタンを巻き込まないよう、スクロールコンテナ（st.container）内部の日記ボタンだけを完全左寄せにするCSS
+    # 💡 戻るボタンを絶対に巻き込まず、日記リスト内のボタンだけを「完全左寄せ・全幅」にするCSS
     st.markdown("""
     <style>
+    /* 上部の操作ボタン（戻るボタンなど）用の通常スタイル定義 */
+    .stButton > button {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.9rem !important;
+        height: auto !important;
+    }
+    
+    /* ⚠️日記リスト（st.container）内にあるボタンだけを厳密にターゲット指定 */
     div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button {
         height: auto !important;
         min-height: 4.5rem;
         padding: 0.6rem 0.8rem !important;
-        display: flex !important;
+        display: inline-flex !important;
         flex-direction: column !important;
-        justify-content: flex-start !important;
-        align-items: flex-start !important;
+        justify-content: flex-start !important; /* 縦方向：上寄せ */
+        align-items: flex-start !important;    /* 横方向：左寄せ */
         text-align: left !important;
+        width: 100% !important;
     }
+    
+    /* ボタンの内部構造コンテナを完全に左寄せにする */
+    div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button div[data-testid="stMarkdownContainer"] {
+        width: 100% !important;
+        text-align: left !important;
+        display: block !important;
+    }
+
+    /* 内部のすべての子要素（div, p, span）のテキスト配置・フレックス配置を完全左寄せに上書き */
     div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button div, 
     div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button p, 
     div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button span {
@@ -228,9 +252,12 @@ elif st.session_state.current_page == "list":
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
+        display: block !important;
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
     }
+    
+    /* 本文プレビュー部分の行数制限と文字装飾 */
     div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button p {
         display: -webkit-box !important;
         -webkit-box-orient: vertical !important;
@@ -257,15 +284,14 @@ elif st.session_state.current_page == "list":
     df_list = df_list[df_list['content'].str.strip() != '']
     df_list = df_list.sort_values(by='date', ascending=False).reset_index(drop=True)
     
-    total_count = len(df_list) # 有効な日記の総件数
+    total_count = len(df_list)
 
-    # 💡 戻るボタンのカラムを極小（0.6）にし、文字を「⬅️」にすることでコンパクト化
-    col_back, col_title = st.columns([0.6, 5.4])
-    if col_back.button("⬅️", key="back_to_cal", use_container_width=True):
+    # 💡 戻るボタンのカラム幅比率を1.5に広げ、文字切れを完全に防止
+    col_back, col_title = st.columns([1.5, 4.5])
+    if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
         st.session_state.current_page = "calendar"
         st.rerun()
         
-    # タイトルに件数を埋め込み
     col_title.markdown(f"<h3 style='margin:0; padding-top:4px;'>📊 日記一覧（{total_count}件）</h3>", unsafe_allow_html=True)
     st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
 
@@ -294,6 +320,17 @@ elif st.session_state.current_page == "list":
 # 画面３：全面編集画面
 # =====================================================================
 elif st.session_state.current_page == "edit":
+    # 編集画面専用のスタイル定義
+    st.markdown("""
+    <style>
+    .stButton > button {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.9rem !important;
+        height: auto !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     edit_date = st.session_state.edit_date
     edit_header = st.session_state.edit_header
     edit_key = f"edit_content_{edit_date}"
@@ -306,9 +343,9 @@ elif st.session_state.current_page == "edit":
             entry = df_edit[df_edit['date'] == edit_date]
             st.session_state[edit_key] = entry['content'].values[0] if not entry.empty else ""
 
-    # 💡 編集画面側の戻るボタンも同様に極小化
-    col_back, col_title = st.columns([0.6, 5.4])
-    if col_back.button("⬅️", key="back_to_list", use_container_width=True):
+    # 💡 編集画面側の戻るボタンのカラム比率も同様に調整し、文字切れを防止
+    col_back, col_title = st.columns([1.5, 4.5])
+    if col_back.button("⬅️ 戻る", key="back_to_list", use_container_width=True):
         current_content = st.session_state[edit_key]
         save_diary(edit_date, edit_header, current_content)
         st.session_state.current_page = "list"
