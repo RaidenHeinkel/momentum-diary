@@ -3,7 +3,6 @@ import requests
 import pandas as pd
 import datetime
 import calendar
-from streamlit_keyup import st_keyup  # 💡 リアルタイム検索用部品
 
 # 設定：GASのURL
 GAS_URL = "https://script.google.com/macros/s/AKfycbzuP38pZNYdVFX_i3_678YwOhm6MHffqB8vayoEqHvmiKHF8yVX3vEOkHInLqBSANsi/exec"
@@ -46,12 +45,12 @@ def save_diary(date_str, header_str, content_str):
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- 共通CSS ---
+# --- ⚙️ 共通CSS ---
 st.markdown("""
 <style>
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
 .responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 8px !important; }
-div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 2px !important; }
+div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 4px !important; }
 div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -132,18 +131,30 @@ if st.session_state.current_page == "calendar":
     if col_l.button("📊 一覧"): st.session_state.current_page = "list"; st.rerun()
 
 # =====================================================================
-# 画面２：一覧（リアルタイム検索）
+# 画面２：一覧（💡外部部品不要！標準検索ハック版）
 # =====================================================================
 elif st.session_state.current_page == "list":
     st.markdown("""
     <style>
-    /* 全ボタンを左寄せ */
+    /* 全ボタンを左寄せ ＆ はみ出し防止 */
     .stButton > button { width: 100% !important; text-align: left !important; justify-content: flex-start !important; align-items: flex-start !important; display: flex !important; flex-direction: column !important; height: auto !important; min-height: 4.5rem; padding: 0.6rem 0.8rem !important; }
     .stButton > button * { text-align: left !important; justify-content: flex-start !important; width: 100% !important; display: block !important; white-space: pre-wrap !important; }
     .stButton > button p { -webkit-line-clamp: 5; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.85rem !important; line-height: 1.4 !important; }
-    /* 戻るボタンだけ中央寄せ */
-    div[data-testid="column"] .stButton > button { display: inline-flex !important; flex-direction: row !important; justify-content: center !important; align-items: center !important; text-align: center !important; min-height: auto !important; padding: 0.4rem !important; }
-    div[data-testid="column"] .stButton > button * { text-align: center !important; width: auto !important; display: inline-block !important; }
+    
+    /* ⬅️ 戻るボタン専用スタイル（横並び安定化） */
+    div[data-testid="column"]:first-child .stButton > button { 
+        display: inline-flex !important; flex-direction: row !important; justify-content: center !important; align-items: center !important; text-align: center !important; 
+        min-height: auto !important; height: 34px !important; padding: 0 !important; font-size: 0.85rem !important; margin-top: 4px !important;
+    }
+    div[data-testid="column"]:first-child .stButton > button * { text-align: center !important; width: auto !important; display: inline-block !important; }
+    
+    /* 📱 スマホ用：タイトル1行固定化 */
+    .list-title-text {
+        margin: 0; padding-top: 8px; font-weight: bold; white-space: nowrap; text-align: right;
+        font-size: calc(0.9rem + 0.4vw) !important;
+    }
+    /* 🔍 検索ボックス内のフォント微調整 */
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] { font-size: 0.9rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -153,21 +164,26 @@ elif st.session_state.current_page == "list":
         if d in df_list['date'].values: df_list.loc[df_list['date'] == d, 'content'] = c
         elif c.strip() != "":
             pd_d = datetime.datetime.strptime(d, "%Y-%m-%d").date()
-            p_h = f"{pd_d.year}年{pd_d.month}月{pd_d.day}日（{weekdays_headers[pd_d.weekday()]}）"
+            p_h = f"{pd_d.year}年{pd_d.month}月{pd_d.day}日（{["月","火","水","木","金","土","日"][pd_d.weekday()]}）"
             df_list = pd.concat([df_list, pd.DataFrame([{"date": d, "header": p_h, "content": c}])], ignore_index=True)
     df_list = df_list[df_list['content'].str.strip() != ''].sort_values(by='date', ascending=False).reset_index(drop=True)
 
     # ヘッダー
-    cb, ct = st.columns([1.3, 4.7])
+    cb, ct = st.columns([1.1, 4.9])
     if cb.button("⬅️ 戻る"): st.session_state.current_page = "calendar"; st.rerun()
     t_place = ct.empty()
 
-    # 🔍 リアルタイム検索
-    q = st_keyup("", placeholder="🔍 本文や日付で検索...", key="search", label_visibility="collapsed")
-    if q:
-        df_list = df_list[df_list['content'].str.contains(q, case=False) | df_list['date'].str.contains(q)]
+    # 💡 標準セレクトボックスを「Enterキー不要のリアルタイム検索窓」にハック！
+    # 入力枠に文字を打ち込むと、スマホのキーボード確定前でも候補がリアルタイムに絞り込まれます
+    search_options = ["🔍 すべて表示"] + [f"{row['date']} : {row['content'][:40].replace('\n', ' ')}" for _, row in df_list.iterrows()]
+    selected_search = st.selectbox("", options=search_options, index=0, label_visibility="collapsed")
+
+    # 選択または入力内容に基づいて一覧を絞り込み
+    if selected_search != "🔍 すべて表示":
+        chosen_date = selected_search.split(" : ")[0]
+        df_list = df_list[df_list['date'] == chosen_date]
     
-    t_place.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold; white-space:nowrap;'>📊 日記一覧（{len(df_list)}件）</p>", unsafe_allow_html=True)
+    t_place.markdown(f"<p class='list-title-text'>📊 日記一覧（{len(df_list)}件）</p>", unsafe_allow_html=True)
 
     if df_list.empty: st.info("見つかりませんでした。")
     else:
