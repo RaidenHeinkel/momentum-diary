@@ -9,26 +9,35 @@ GAS_URL = "https://script.google.com/macros/s/AKfycbzuP38pZNYdVFX_i3_678YwOhm6MH
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1lXoSqz_TNSuzKpnNOrytNJ5P6uc-Wjr3Q2Bp1-A0Fxk/gviz/tq?tqx=out:csv"
 WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 
-# --- スタイル定義 (強力に左寄せを強制) ---
+# --- スタイル定義 (極めて強力に左寄せを強制) ---
 CSS = """
 <style>
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
 .responsive-title { font-size: 1.6rem !important; font-weight: bold; text-align: center; margin-bottom: 8px !important; }
 .weekday-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: #888888; margin: 0 0 3px 0; }
 
-/* ボタンの内部構造を左寄せに強制 */
-div.stButton > button {
+/* ボタンコンテナ全体を左寄せに強制 */
+div[data-testid="stButton"] > button {
     display: flex !important;
     justify-content: flex-start !important;
-    align-items: flex-start !important;
+    align-items: center !important;
+    text-align: left !important;
+    width: 100% !important;
+    padding-left: 10px !important;
+}
+
+/* ボタン内のテキストコンテナを強制的に左寄せ */
+div[data-testid="stButton"] > button div[data-testid="stMarkdownContainer"] {
+    display: flex !important;
+    justify-content: flex-start !important;
     text-align: left !important;
     width: 100% !important;
 }
-/* ボタン内部のテキストコンテナを強制的に左寄せ */
-div.stButton > button div[data-testid="stMarkdownContainer"] {
+
+/* さらに中のpタグまで左寄せを強制 */
+div[data-testid="stButton"] > button div[data-testid="stMarkdownContainer"] p {
     text-align: left !important;
-    width: 100% !important;
-    display: block !important;
+    margin: 0 !important;
 }
 
 div[data-testid="stSelectbox"] label { display: none !important; }
@@ -201,7 +210,6 @@ def render_list():
     st.subheader(f"日記一覧（{len(df)}件）")
     with st.container(height=520):
         for idx, row in df.iterrows():
-            # 改行を入れることで、タイトルと内容が見やすいようにしました
             if st.button(f"📅 {row['date']}\n{row['content'][:100]}...", key=f"btn_{idx}", use_container_width=True):
                 st.session_state.update(edit_date=row['date'], edit_header=row['header'], current_page="edit")
                 st.rerun()
