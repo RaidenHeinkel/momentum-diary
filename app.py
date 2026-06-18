@@ -213,30 +213,25 @@ elif st.session_state.current_page == "list":
     
     st.markdown("""
     <style>
-    /* 全てのボタン（戻る/クリア/リスト項目）の高さを強制統一 */
-    div.stButton > button {
-        height: 42px !important;
-        padding-top: 0px !important;
-        padding-bottom: 0px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    
-    /* 検索入力欄の高さを合わせる */
+    /* 1. 検索窓の高さを固定 */
     div[data-testid="stTextInput"] > div > div {
         height: 42px !important;
-        padding-top: 0px !important;
-        padding-bottom: 0px !important;
     }
     
-    /* 日記リスト項目ボタンだけは高さを戻す */
-    button[data-testid="base-button"] {
+    /* 2. ヘッダーのボタン（戻る・クリア）の高さを検索窓と揃える */
+    div[data-testid="stHorizontalBlock"] > div:not(:has([data-testid="stVerticalBlock"])) button {
+        height: 42px !important;
+        margin-top: 24px !important;
+    }
+    
+    /* 3. リスト表示エリア内のボタンだけは高さ自動（本文表示のため） */
+    div[data-testid="stVerticalBlock"] > div > div > div > div[data-testid="stVerticalBlock"] button {
         height: auto !important;
         min-height: 4.5rem !important;
         padding: 0.6rem 0.8rem !important;
     }
 
+    /* ボタン内のテキスト折り返し設定 */
     .stButton > button * {
         text-align: left !important; justify-content: flex-start !important; align-items: flex-start !important;
         margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important;
@@ -291,7 +286,7 @@ elif st.session_state.current_page == "list":
             df_list['date'].str.contains(search_query, na=False)
         ]
     
-    col_title.markdown(f"<p style='margin:10px 0 0 0; font-size:1.1rem; font-weight:bold;'>📊 日記一覧（{len(df_list)}件）</p>", unsafe_allow_html=True)
+    col_title.markdown(f"<p style='margin:28px 0 0 0; font-size:1.1rem; font-weight:bold;'>📊 日記一覧（{len(df_list)}件）</p>", unsafe_allow_html=True)
 
     # 4. リスト表示
     if df_list.empty:
