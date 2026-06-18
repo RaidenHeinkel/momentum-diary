@@ -212,7 +212,6 @@ if st.session_state.current_page == "calendar":
 # =====================================================================
 elif st.session_state.current_page == "list":
     
-    # 💡 逆転の発想：全ボタンを完全左寄せにし、カラム内の「戻る」ボタンだけを中央寄せに戻すCSS
     st.markdown("""
     <style>
     /* 1. 一覧画面のすべてのボタンをデフォルトで「完全左寄せ・全幅」にする */
@@ -222,13 +221,13 @@ elif st.session_state.current_page == "list":
         padding: 0.6rem 0.8rem !important;
         display: flex !important;
         flex-direction: column !important;
-        justify-content: flex-start !important; /* 縦方向：上寄せ */
-        align-items: flex-start !important;    /* 横方向：左寄せ */
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
         text-align: left !important;
         width: 100% !important;
     }
     
-    /* 2. ボタン内部のすべての末端要素（p, span, div等）のセンタリングを根こそぎ上書き解除 */
+    /* 2. ボタン内部のすべての末端要素のセンタリングを上書き解除 */
     .stButton > button * {
         text-align: left !important;
         justify-content: flex-start !important;
@@ -251,7 +250,7 @@ elif st.session_state.current_page == "list":
         line-height: 1.4 !important;
     }
 
-    /* 4. 💡 カラム（st.columns）の中にあるボタン＝「⬅️ 戻る」ボタンだけをピンポイントで通常の中央寄せに戻す */
+    /* 4. カラムの中にあるボタン＝「⬅️ 戻る」ボタンだけをピンポイントで通常の中央寄せに戻す */
     div[data-testid="column"] .stButton > button,
     div[data-testid="stColumn"] .stButton > button {
         min-height: auto !important;
@@ -276,7 +275,6 @@ elif st.session_state.current_page == "list":
     </style>
     """, unsafe_allow_html=True)
 
-    # 先にデータを集計して件数を割り出す
     df_list = get_data(SHEET_URL)
     for d, c in st.session_state.local_updates.items():
         if d in df_list['date'].values:
@@ -326,7 +324,6 @@ elif st.session_state.current_page == "list":
 # 画面３：全面編集画面
 # =====================================================================
 elif st.session_state.current_page == "edit":
-    # 編集画面専用のスタイル定義
     st.markdown("""
     <style>
     .stButton > button {
@@ -350,9 +347,9 @@ elif st.session_state.current_page == "edit":
             st.session_state[edit_key] = entry['content'].values[0] if not entry.empty else ""
 
     col_back, col_title = st.columns([1.5, 4.5])
+    
+    # 💡 戻るボタンが押された時の通信を完全廃止し、ページ遷移だけを行うように軽量化！
     if col_back.button("⬅️ 戻る", key="back_to_list", use_container_width=True):
-        current_content = st.session_state[edit_key]
-        save_diary(edit_date, edit_header, current_content)
         st.session_state.current_page = "list"
         st.rerun()
         
