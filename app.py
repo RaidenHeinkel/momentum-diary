@@ -291,12 +291,14 @@ elif st.session_state.current_page == "list":
     
     total_count = len(df_list)
 
-    col_back, col_title = st.columns([1.5, 4.5])
+    # 💡 スマホの横幅に合わせてカラム比率を 1.3 : 4.7 に広げ、タイトルスペースを確保
+    col_back, col_title = st.columns([1.3, 4.7])
     if col_back.button("⬅️ 戻る", key="back_to_cal", use_container_width=True):
         st.session_state.current_page = "calendar"
         st.rerun()
         
-    col_title.markdown(f"<h3 style='margin:0; padding-top:4px;'>📊 日記一覧（{total_count}件）</h3>", unsafe_allow_html=True)
+    # 💡 フォントサイズを絶妙な1.1rem（太字）に縮小し、かつ絶対に改行させない CSS (white-space: nowrap) を追加！
+    col_title.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold; white-space:nowrap;'>📊 日記一覧（{total_count}件）</p>", unsafe_allow_html=True)
     st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
 
     if df_list.empty:
@@ -346,14 +348,15 @@ elif st.session_state.current_page == "edit":
             entry = df_edit[df_edit['date'] == edit_date]
             st.session_state[edit_key] = entry['content'].values[0] if not entry.empty else ""
 
-    col_back, col_title = st.columns([1.5, 4.5])
+    # 💡 編集画面も一覧画面と統一感を持たせるため、同じ比率 1.3 : 4.7 に調整
+    col_back, col_title = st.columns([1.3, 4.7])
     
-    # 💡 戻るボタンが押された時の通信を完全廃止し、ページ遷移だけを行うように軽量化！
     if col_back.button("⬅️ 戻る", key="back_to_list", use_container_width=True):
         st.session_state.current_page = "list"
         st.rerun()
         
-    col_title.markdown(f"<h4 style='margin:0; padding-top:6px;'>📝 日記編集</h4>", unsafe_allow_html=True)
+    # 💡 編集画面のヘッダーもサイズを揃えて綺麗に1行化
+    col_title.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold; white-space:nowrap;'>📝 日記編集</p>", unsafe_allow_html=True)
     st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
 
     st.markdown(f"### {edit_header}")
