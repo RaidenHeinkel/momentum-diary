@@ -274,16 +274,14 @@ elif st.session_state.current_page == "list":
     # 3. 🔍 検索バー ＋ クリアボタン
     col_search, col_clear = st.columns([4, 1])
     
-    # 修正：value引数を削除。key="diary_search_input"だけで状態を管理します
-    search_query = col_search.text_input("", placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
-    
-    # 検索窓が空でない場合、それを検索クエリとして使用（保持機能）
-    st.session_state.search_query = search_query
-    
     if col_clear.button("検索クリア", use_container_width=True):
         st.session_state.search_query = ""
-        st.session_state["diary_search_input"] = "" # これで強制的に空にする
+        if "diary_search_input" in st.session_state:
+            del st.session_state["diary_search_input"]
         st.rerun()
+
+    search_query = col_search.text_input("", placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
+    st.session_state.search_query = search_query
 
     # 💡 検索フィルタリング
     if search_query:
@@ -354,16 +352,4 @@ elif st.session_state.current_page == "edit":
         st.session_state.current_page = "list"
         st.rerun()
         
-    col_title.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold; white-space:nowrap;'>📝 日記編集</p>", unsafe_allow_html=True)
-    st.markdown("<hr style='margin:4px 0 12px 0;'>", unsafe_allow_html=True)
-
-    st.markdown(f"### {edit_header}")
-    updated_content = st.text_area("", key=edit_key, height=360)
-
-    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
-
-    if st.button("💾 保存", type="primary", use_container_width=True):
-        if save_diary(edit_date, edit_header, updated_content):
-            st.success("保存に成功しました！")
-        else:
-            st.error("保存に失敗しました")
+    col_title.markdown(f"<p style='margin:0; padding-top:6px; font-size:1.1rem; font-weight:bold
