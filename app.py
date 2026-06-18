@@ -62,7 +62,7 @@ def save_current_diary_if_changed():
 df_all = get_data(SHEET_URL)
 existing_dates = set(df_all[df_all['content'].str.strip() != '']['date'].tolist())
 
-# --- アプリ共通レイアウト用CSSスタイル定義（ボタン以外） ---
+# --- アプリ共通レイアウト用CSSスタイル定義 ---
 st.markdown("""
 <style>
 .main .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
@@ -74,7 +74,7 @@ div[data-testid="stColumn"], div[data-testid="column"] { width: 0 !important; fl
 
 
 # =====================================================================
-# 画面１：カレンダー画面（メイン）
+# 画面１：カレンダー画面
 # =====================================================================
 if st.session_state.current_page == "calendar":
     st.markdown("""
@@ -85,7 +85,6 @@ if st.session_state.current_page == "calendar":
     div[data-testid="stSelectbox"] > div { margin: 0 !important; padding: 0 !important; }
     div[data-testid="stTextArea"] label { display: none !important; margin: 0 !important; padding: 0 !important; }
     div[data-testid="stTextArea"] { margin-top: 4px !important; }
-    div[data-testid="stTextArea"] > div { position: relative !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -215,34 +214,20 @@ elif st.session_state.current_page == "list":
     st.markdown("""
     <style>
     .stButton > button {
-        height: auto !important;
-        min-height: 4.5rem;
-        padding: 0.6rem 0.8rem !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-start !important;
-        align-items: flex-start !important;
-        text-align: left !important;
-        width: 100% !important;
+        height: auto !important; min-height: 4.5rem; padding: 0.6rem 0.8rem !important;
+        display: flex !important; flex-direction: column !important;
+        justify-content: flex-start !important; align-items: flex-start !important;
+        text-align: left !important; width: 100% !important;
     }
     .stButton > button * {
-        text-align: left !important;
-        justify-content: flex-start !important;
-        align-items: flex-start !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        display: block !important;
-        white-space: pre-wrap !important;
-        word-wrap: break-word !important;
+        text-align: left !important; justify-content: flex-start !important; align-items: flex-start !important;
+        margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important;
+        white-space: pre-wrap !important; word-wrap: break-word !important;
     }
     .stButton > button p {
-        display: -webkit-box !important;
-        -webkit-box-orient: vertical !important;
-        -webkit-line-clamp: 5 !important;
-        overflow: hidden !important;
-        font-size: 0.85rem !important;
-        line-height: 1.4 !important;
+        display: -webkit-box !important; -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 5 !important; overflow: hidden !important;
+        font-size: 0.85rem !important; line-height: 1.4 !important;
     }
     div[data-testid="stTextInput"] { margin-bottom: 0px !important; }
     </style>
@@ -263,20 +248,19 @@ elif st.session_state.current_page == "list":
     df_list = df_list[df_list['content'].str.strip() != '']
     df_list = df_list.sort_values(by='date', ascending=False).reset_index(drop=True)
 
-    # 2. レイアウトの構築 (1段に集約)
-    col_back, col_search, col_clear = st.columns([1, 4, 1.2])
-    
-    # 戻るボタン
-    if col_back.button("⬅️", use_container_width=True):
+    # 2. ２段レイアウトの構築
+    # 上段：戻るボタン ＋ タイトル
+    col_back, col_title = st.columns([1.5, 4.5])
+    if col_back.button("⬅️ 戻る", use_container_width=True):
         st.session_state.search_query = ""
         st.session_state.current_page = "calendar"
         st.rerun()
 
-    # 検索窓
-    search_query = col_search.text_input("", value=st.session_state.search_query, placeholder="🔍 検索...", key="diary_search_input", label_visibility="collapsed")
+    # 下段：検索窓 ＋ クリアボタン
+    col_search, col_clear = st.columns([4, 1])
+    search_query = col_search.text_input("", value=st.session_state.search_query, placeholder="🔍 キーワードで日記を検索...", key="diary_search_input", label_visibility="collapsed")
     st.session_state.search_query = search_query
 
-    # クリアボタン
     if col_clear.button("× クリア", use_container_width=True):
         st.session_state.search_query = ""
         if "diary_search_input" in st.session_state:
@@ -290,7 +274,7 @@ elif st.session_state.current_page == "list":
             df_list['date'].str.contains(search_query, na=False)
         ]
     
-    st.markdown(f"<p style='margin: 10px 0 5px 0; font-size: 1rem; font-weight: bold;'>📊 日記一覧（{len(df_list)}件）</p>", unsafe_allow_html=True)
+    col_title.markdown(f"<p style='margin:10px 0 0 0; font-size:1.1rem; font-weight:bold;'>📊 日記一覧（{len(df_list)}件）</p>", unsafe_allow_html=True)
 
     # 4. リスト表示
     if df_list.empty:
